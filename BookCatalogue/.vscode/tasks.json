@@ -1,0 +1,29 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build BookCatalogue",
+            "type": "shell",
+            "command": "powershell ./buildAndRun.ps1",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Start MySQL",
+            "type":"shell",
+            "command": "& 'C:\\Users\\cwf\\Documents\\BookCatalogue\\MySQL\\bin\\mysqld.exe' --console",
+            "problemMatcher": []
+        },
+        {
+            "label": "Change to MySQL directory",
+            "type": "shell",
+            "command": "powershell -NoExit -Command 'Set-Location C:\\Users\\cwf\\Documents\\BookCatalogue\\MySQL\\bin'",
+            "problemMatcher": []
+        }
+    ]
+}
