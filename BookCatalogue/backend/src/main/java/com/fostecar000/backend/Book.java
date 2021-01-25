@@ -1,8 +1,8 @@
 package com.fostecar000.backend;
 
 import javax.persistence.*;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table( name = "books" )
@@ -35,7 +35,7 @@ public class Book {
 	private int originalPublicationDate;
 
 	@OneToMany( mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true )
-    private List<Tag> tags;
+    private Set<Tag> tags;
 
     public Book() {
 
@@ -49,7 +49,7 @@ public class Book {
 		this.series = series;
 		this.numberInSeries = numberInSeries;
 		this.originalPublicationDate = originalPublicationDate;
-		tags = new ArrayList<>();
+		tags = new HashSet<>();
     }
 
 	public boolean equals(Object o) {
@@ -136,13 +136,16 @@ public class Book {
         return tags;
     }
 
-	public void addTag(Tag t) {
+	public boolean addTag(Tag t) {
+		if (tags.contains(t)) return false;
 		tags.add(t);
 		t.setBook(this);
+		return true;
 	}
 
 	public void removeTag(Tag t) {
-		tags.remove(t);
-		t.setBook(null);
+		boolean contained = tags.contains(t);
+		tags.remove(t); // does nothing if tag isn't in set
+		if (contained) t.setBook(null); // if a tag that wasn't in the tags set is passed, don't null the book
 	}
 }

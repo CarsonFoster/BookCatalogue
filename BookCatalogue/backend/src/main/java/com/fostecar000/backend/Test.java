@@ -30,27 +30,40 @@ public class Test {
 
     private static void bookTests() {
         List<Test> tests = new ArrayList<>();
-        
+        final long id = 4L;
 
+        Test createBookBasic = new Test("createBookBasic", s -> {
+            Book b = new Book("Dune", "Frank", "Herbert", "scifi", "Dune", 1, 1965);
+            s.persist(b);
+        });
+
+        Test createBook = new Test("createBook", s -> {
+            Book b = new Book("Dune", "Frank", "Herbert", "scifi", "Dune", 1, 1965);
+            BookCatalogue.addBook(b, new String[] {"awesome", "great", "religion", "politics", "Muad'Dib"});
+        });
+        
         Test readBook = new Test("readBook", s -> {
-            Book b = (Book) s.get(Book.class, 1L);
+            Book b = (Book) s.get(Book.class, id);
             System.out.println(b);
         });
-        //tests.add(readBook);
-
+        
         Test updateBook = new Test("updateBook", s -> {
-            Book b = (Book) s.get(Book.class, 1L);
-            b.addTag(new Tag("awesome"));
+            Book b = (Book) s.get(Book.class, id);
+            //b.addTag(new Tag("awesome"));
+            System.out.println("duplicate add entry return: " + b.addTag(new Tag("awesome")));
             s.update(b);
         });
-        //tests.add(updateBook);
-
-        //tests.add(readBook);
+        
         Test deleteBook = new Test("deleteBook", s -> {
-            Book b = (Book) s.get(Book.class, 1L);
+            Book b = (Book) s.get(Book.class, id);
             s.delete(b);
         });
-        tests.add(deleteBook);
+
+        //tests.add(createBook);
+        tests.add(readBook);
+        //tests.add(updateBook);
+        //tests.add(readBook);
+        //tests.add(deleteBook);
 
         runTests(tests);
     }
@@ -60,28 +73,8 @@ public class Test {
         for (Test t : tests) {
             String label = t.getLabel();
             Consumer<Session> code = t.getCode();
-            numberOfFailures += test(label, code);
+            numberOfFailures += HibernateUtils.executeTask(label, code);
         }
         System.out.println("[I] Total number of test failures: " + numberOfFailures);
-    }
-
-    private static int test(String label, Consumer<Session> code) {
-        System.out.println("[I] Starting test " + label + ":");
-        Transaction transaction = null;
-        try (Session session = HibernateUtils.getSessionFactory().openSession()) {
-            transaction = session.getTransaction();
-            transaction.begin();
-
-            code.accept(session);
-
-            transaction.commit();
-            System.out.println("[+] Committed transaction for test " + label);
-            return 0; // success
-        } catch (Exception e) {
-            System.out.println("[-] EXCEPTION in test " + label + " (rolling back transaction):");
-            //if (transaction != null) transaction.rollback();
-            e.printStackTrace();
-            return 1; // failure
-        }
     }
 }
