@@ -3,17 +3,23 @@ package com.fostecar000.backend;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
+import java.util.LinkedList;
+import java.util.Deque;
 
 public class BookQuery {
     private static CriteriaBuilder builder;
+
     private CriteraQuery<Book> query;
     private Root<Book> book;
     private Join<Book, Tag> tag;
     private boolean joinedTags,
-                    andNext,
-                    orNext,
                     notNext;
-    private Predicate predicate;
+    //private Predicate predicate;
+    private int currentNumberOfPredicates;
+    private Deque<Integer> numberOfPredicates;
+    private Deque<Boolean> isAnAndBlock;
+    private Deque<Predicate> predicates;
+
 
     private static void getBuilder() throws IllegalStateException {
         if (cb == null) {
@@ -29,32 +35,63 @@ public class BookQuery {
         query.select(book);
         
         joinedTags = false;
-        andNext = false;
-        orNext = false;
         notNext = false;
+        currentNumberOfPredicates = 0;
+        numberOfPredicates = new LinkedList<>();
+        isAnAndBlock = new LinkedList<>();
+        predicates = new LinkedList<>();
+    }
+
+    private void reusableOperatorCode(boolean isAnAnd) {
+        if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate operators");
+        
+        currentNumberOfPredicates++;                        // the 'and' result is also a predicate
+        numberOfPredicates.push(currentNumberOfPredicates); // push previous number of predicates
+        currentNumberOfPredicates = 0;                      // reset current number
+
+        isAnAndBlock.push(isAnAnd);                         // this is/isn't an 'and' block
+    }
+
+    private void reusableEndOperatorCode(boolean isAnAnd) {
+        if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate ending functions");
+        
+        if (isAnAndBlock.isEmpty() || isAnAnd != isAnAndBlock.pop()) 
+            throw new BookQueryException("end" + (isAnAnd ? "And" : "Or") + "() called unexpectedly"); // if this isn't the correct block, throw an exception
+
+        Predicate[] predicatesInBlock = new Predicate[currentNumberOfPredicates];
+        for (int i = 0; i < currentNumberOfPredicates; i++) {
+            predicatesInBlock[i] = predicates.pop();
+        }
+        Predicate resultOfOperation = (isAnAnd ? builder.and(predicatesInBlock) : builder.or(predicatesInBlock));
+        predicates.push(resultOfOperation); // push result back onto stack
+
+        currentNumberOfPredicates = numberOfPredicates.pop(); // restore parent's number
     }
 
     public BookQuery and() {
-        if (predicate == null) throw new BookQueryException("an 'and' cannot be the first method call");
-        if (andNext) throw new BookQueryException("cannot have two 'and's immediately next to each other");
-        if (orNext) throw new BookQueryException("cannot have an 'and' immediately after an 'or'");
-        if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate operators");
-        andNext = true;
-        return this;
+        reusableOperatorCode(true);
+        return this; // chaining
+    }
+
+    public BookQuery endAnd() {
+        reusableEndOperatorCode(true);
+        return this; // chaining
     }
 
     public BookQuery or() {
-        if (predicate == null) throw new BookQueryException("an 'or' cannot be the first method call");
-        if (orNext) throw new BookQueryException("cannot have two 'or's immediately next to each other");
-        if (andNext) throw new BookQueryException("cannot have an 'or' immediately after an 'and'");
-        if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate operators");
-        orNext = true;
-        return this;
+        reusableOperatorCode(false);
+        return this; // chaining
+    }
+
+    public BookQuery endOr() {
+        reusableEndOperatorCode(false);
+        return this; // chaining
     }
 
     public BookQuery not() {
-        notNext = !notNext; // can have two nots next to each other (I don't know why one would want to, but you can)
-        return this;
+        if (notNext) throw new BookQueryException("why are you negating your 'not'??? I have explicitly disallowed this");
+        notNext = true;
+        return this; // chaining
     }
 
     public BookQuery hasTag(String t) {
@@ -63,23 +100,15 @@ public class BookQuery {
             joinedTags = true;
         }
         Predicate p = builder.equal(Tag_.tag, t);
-        linkPredicates(p);
+        applyNotAndPushPredicate(p);
     }
 
-    private void linkPredicates(Predicate p) {
+    private void applyNotAndPushPredicate(Predicate p) {
         if (notNext) {
             p = p.not();
             notNext = false;
         }
-
-        if (predicate == null) predicate = p;
-
-        if (andNext) {
-            predicate = builder.and(predicate, p);
-        } else if (orNext) {
-            predicate = builder.or(predicate, p); // how does this work with order of operations and implied parentheses?
-        } else {
-            throw new BookQueryException("two conditions were called back to back: no way to link them");
-        }
+        currentNumberOfPredicates++;
+        predicates.push(p);
     }
 }
