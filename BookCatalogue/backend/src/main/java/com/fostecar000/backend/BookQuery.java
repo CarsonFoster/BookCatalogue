@@ -5,27 +5,35 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import java.util.LinkedList;
 import java.util.Deque;
+import java.util.List;
 
 public class BookQuery {
-    private static CriteriaBuilder builder;
+    private CriteriaBuilder builder;
+    private Session session;
 
     private CriteraQuery<Book> query;
     private Root<Book> book;
     private Join<Book, Tag> tag;
     private boolean joinedTags,
-                    notNext;
-    //private Predicate predicate;
+                    notNext,
+                    queriedAlready;
     private int currentNumberOfPredicates;
     private Deque<Integer> numberOfPredicates;
     private Deque<Boolean> isAnAndBlock;
     private Deque<Predicate> predicates;
+    private List<Book> results; // only cached if told to by user
 
 
-    private static void getBuilder() throws IllegalStateException {
-        if (cb == null) {
-            Session session = HibernateUtils.getSessionFactory().openSession()) {
-            cb = session.getCriteriaBuilder();
-        }
+    private void getBuilder() throws IllegalStateException {
+        getSession();
+        
+        if (builder == null)
+            builder = session.getCriteriaBuilder();
+    }
+
+    private void getSession() throws IllegalStateException {
+        if (session == null)
+            session = HibernateUtils.getSessionFactory().openSession();
     }
 
     public BookQuery() {
@@ -36,16 +44,34 @@ public class BookQuery {
         
         joinedTags = false;
         notNext = false;
+        queriedAlready = false;
         currentNumberOfPredicates = 0;
         numberOfPredicates = new LinkedList<>();
         isAnAndBlock = new LinkedList<>();
         predicates = new LinkedList<>();
     }
 
+    public List<Book> query() {
+        return query(true);
+    }
+
+    public List<Book> query(boolean storeResult) {
+        if (results != null) return results;
+        if (predicates.size() != 1) throw new BookQueryException("unexpected call to query()"); // there should only be one item on the stack -- the final result
+        if (!queriedAlready) query.where(predicates.pop());
+
+        queriedAlready = true;
+        getSession();
+        List<Book> resultList = session.createQuery(query).getResultList();
+        if (storeResult) results = resultList;
+        return resultList;
+    }
+
     private void reusableOperatorCode(boolean isAnAnd) {
+        checkIfQueried()
         if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate operators");
         
-        currentNumberOfPredicates++;                        // the 'and' result is also a predicate
+        currentNumberOfPredicates++;                        // the 'and'/'or' result is also a predicate
         numberOfPredicates.push(currentNumberOfPredicates); // push previous number of predicates
         currentNumberOfPredicates = 0;                      // reset current number
 
@@ -53,6 +79,7 @@ public class BookQuery {
     }
 
     private void reusableEndOperatorCode(boolean isAnAnd) {
+        checkIfQueried()
         if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate ending functions");
         
         if (isAnAndBlock.isEmpty() || isAnAnd != isAnAndBlock.pop()) 
@@ -66,6 +93,10 @@ public class BookQuery {
         predicates.push(resultOfOperation); // push result back onto stack
 
         currentNumberOfPredicates = numberOfPredicates.pop(); // restore parent's number
+    }
+
+    private void checkIfQueried() {
+        if (queriedAlready) throw new BookQueryException("the query has already been created; you cannot modify it now");
     }
 
     public BookQuery and() {
@@ -89,12 +120,14 @@ public class BookQuery {
     }
 
     public BookQuery not() {
+        checkIfQueried()
         if (notNext) throw new BookQueryException("why are you negating your 'not'??? I have explicitly disallowed this");
         notNext = true;
         return this; // chaining
     }
 
     public BookQuery hasTag(String t) {
+        checkIfQueried()
         if (!joinedTags) {
             tag = book.join(Book_.tags);
             joinedTags = true;

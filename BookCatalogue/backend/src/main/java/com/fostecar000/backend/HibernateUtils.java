@@ -51,8 +51,8 @@ public abstract class HibernateUtils {
         if (stdServiceReg != null) StandardServiceRegistryBuilder.destroy(stdServiceReg);
     }
 
-    public static int executeTask(String label, Consumer<Session> code) {
-        System.out.println("[I] Starting task " + label + ":");
+    public static int sessionWrapper(String label, Consumer<Session> code) {
+        System.out.println("[*] Starting task " + label);
         Transaction transaction = null;
         try (Session session = getSessionFactory().openSession()) {
             transaction = session.getTransaction();
@@ -65,7 +65,7 @@ public abstract class HibernateUtils {
             return 0; // success
         } catch (Exception e) {
             System.out.println("[-] EXCEPTION in task " + label + " (rolling back transaction):");
-            //if (transaction != null) transaction.rollback();
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
             return 1; // failure
         }
