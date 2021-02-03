@@ -63,8 +63,7 @@ public class Book {
 	}
     
 	public String toString() {
-		return String.format("\"%s\" (%s #%d) by %s %s (published %d), genre: %s, tags:%n", title, series, numberInSeries, authorFirst, authorLast, originalPublicationDate, genre)
-			+ tags.toString();
+		return String.format("\"%s\" (%s #%d) by %s %s (published %d), genre: %s, tags: %s", title, series, numberInSeries, authorFirst, authorLast, originalPublicationDate, genre, tags.toString());
 	}
 
     public Long getId() {

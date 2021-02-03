@@ -4,7 +4,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Join;
+import javax.persistence.criteria.Subquery;
 import java.util.LinkedList;
 import java.util.Deque;
 import java.util.List;
@@ -16,9 +16,7 @@ public class BookQuery {
 
     private CriteriaQuery<Book> query;
     private Root<Book> book;
-    private Join<Book, Tag> tag;
-    private boolean joinedTags,
-                    notNext,
+    private boolean notNext,
                     queriedAlready;
     private int currentNumberOfPredicates;
     private Deque<Integer> numberOfPredicates;
@@ -45,7 +43,6 @@ public class BookQuery {
         book = query.from(Book.class);
         query.select(book);
         
-        joinedTags = false;
         notNext = false;
         queriedAlready = false;
         currentNumberOfPredicates = 0;
@@ -131,11 +128,20 @@ public class BookQuery {
 
     public BookQuery hasTag(String t) {
         checkIfQueried();
-        if (!joinedTags) {
-            tag = book.join(Book_.tags);
-            joinedTags = true;
-        }
-        Predicate p = builder.equal(tag.get(Tag_.tag), t);
+
+        // The following subquery counts the number of times the given tag appears for the currently selected book
+        // Thus, we can then test if the count >= 1 to see if the book has that tag; if !(count >= 1) then the book doesn't have the tag
+
+        Subquery sub = query.subquery(Long.class);
+        Root subRoot = sub.from(Tag.class);
+        sub.select(builder.count(subRoot.get(Tag_.id)));
+        sub.where(builder.and(
+            builder.equal(book.get(Book_.id), subRoot.get(Tag_.book)),
+            builder.equal(subRoot.get(Tag_.tag), t)
+        ));
+
+        Predicate p = builder.ge(sub, 1L);
+        
         applyNotAndPushPredicate(p);
         return this; // chaining
     }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import javax.persistence.criteria.*;
 
 
 public class Test {
@@ -82,20 +83,39 @@ public class Test {
                         .hasTag("bad")
                 .endAnd()
                 .query();
+            
+            for (Book b : results) System.out.println(b);
+        });
 
+        Test subqueryTest = new Test("subquery", () -> {
+            HibernateUtils.sessionWrapper("subquery", s -> {
+                CriteriaBuilder builder = s.getCriteriaBuilder();
+                CriteriaQuery query = builder.createQuery(Book.class);
+                Root root = query.from(Book.class);
 
-            /*Set<Integer> awesome = hasTag.get("awesome");
-            for (Integer seriesNum : awesome) {
-                boolean found = false;
-                for (Book b : results) {
-                    if (b.getNumberInSeries() == seriesNum) found = true;
-                }
-                if (!found) System.out.println("Book " + seriesNum + " was not found.");
-            }
-            for (Book b : results) {
-                if (!awesome.contains(b.getNumberInSeries())) System.out.println("Extra book found: " + b.getNumberInSeries());
-            }*/
-            System.out.println(results);
+                Subquery sub = query.subquery(Long.class);
+                Root subRoot = sub.from(Tag.class);
+                sub.select(builder.count(subRoot.get(Tag_.id)));
+                sub.where(builder.and(
+                    builder.equal(root.get(Book_.id), subRoot.get(Tag_.book)),
+                    builder.equal(subRoot.get(Tag_.tag), "awesome")
+                ));
+
+                Subquery sub2 = query.subquery(Long.class);
+                Root sub2Root = sub2.from(Tag.class);
+                sub2.select(builder.count(sub2Root.get(Tag_.id)))
+                    .where(builder.and(
+                        builder.equal(root.get(Book_.id), sub2Root.get(Tag_.book)),
+                        builder.equal(sub2Root.get(Tag_.tag), "bad")
+                    ));
+
+                query.where(builder.and(
+                    builder.ge(sub, 1L),
+                    builder.lessThan(sub2, 1L)
+                ));
+                List<Book> results = s.createQuery(query).getResultList();
+                for (Book b : results) System.out.println(b);
+            });
         });
 
         Test readBook = new Test("readBook", () -> {
@@ -127,6 +147,7 @@ public class Test {
         //tests.add(readBook);
         //tests.add(deleteBook);
         tests.add(queryBasic);
+        //tests.add(subqueryTest);
 
         runTests(tests);
     }
