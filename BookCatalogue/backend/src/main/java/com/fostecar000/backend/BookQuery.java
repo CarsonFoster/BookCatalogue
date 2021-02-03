@@ -3,15 +3,18 @@ package com.fostecar000.backend;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Join;
 import java.util.LinkedList;
 import java.util.Deque;
 import java.util.List;
+import org.hibernate.Session;
 
 public class BookQuery {
     private CriteriaBuilder builder;
     private Session session;
 
-    private CriteraQuery<Book> query;
+    private CriteriaQuery<Book> query;
     private Root<Book> book;
     private Join<Book, Tag> tag;
     private boolean joinedTags,
@@ -68,7 +71,7 @@ public class BookQuery {
     }
 
     private void reusableOperatorCode(boolean isAnAnd) {
-        checkIfQueried()
+        checkIfQueried();
         if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate operators");
         
         currentNumberOfPredicates++;                        // the 'and'/'or' result is also a predicate
@@ -79,7 +82,7 @@ public class BookQuery {
     }
 
     private void reusableEndOperatorCode(boolean isAnAnd) {
-        checkIfQueried()
+        checkIfQueried();
         if (notNext) throw new BookQueryException("'not' only negates conditions, cannot negate ending functions");
         
         if (isAnAndBlock.isEmpty() || isAnAnd != isAnAndBlock.pop()) 
@@ -120,20 +123,21 @@ public class BookQuery {
     }
 
     public BookQuery not() {
-        checkIfQueried()
+        checkIfQueried();
         if (notNext) throw new BookQueryException("why are you negating your 'not'??? I have explicitly disallowed this");
         notNext = true;
         return this; // chaining
     }
 
     public BookQuery hasTag(String t) {
-        checkIfQueried()
+        checkIfQueried();
         if (!joinedTags) {
             tag = book.join(Book_.tags);
             joinedTags = true;
         }
-        Predicate p = builder.equal(Tag_.tag, t);
+        Predicate p = builder.equal(tag.get(Tag_.tag), t);
         applyNotAndPushPredicate(p);
+        return this; // chaining
     }
 
     private void applyNotAndPushPredicate(Predicate p) {
