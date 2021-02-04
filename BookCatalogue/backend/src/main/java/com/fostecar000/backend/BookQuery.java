@@ -146,6 +146,70 @@ public class BookQuery {
         return this; // chaining
     }
 
+    public BookQuery isId(long id) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.id), id);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+
+    public BookQuery isTitle(String title) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.title), title);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+
+    public BookQuery isAuthorFirst(String authorFirst) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.authorFirst), authorFirst);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+
+    public BookQuery isAuthorLast(String authorLast) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.authorLast), authorLast);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+
+	public BookQuery isGenre(String genre) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.genre), genre);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+
+	public BookQuery isSeries(String series) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.series), series);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+
+	public BookQuery isNumberInSeries(int numberInSeries) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.numberInSeries), numberInSeries);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+
+	public BookQuery isOriginalPublicationDate(int originalPublicationDate) {
+        checkIfQueried();
+
+        Predicate p = builder.equal(book.get(Book_.originalPublicationDate), originalPublicationDate);
+        applyNotAndPushPredicate(p);
+        return this; // chaining
+    }
+    
     private void applyNotAndPushPredicate(Predicate p) {
         if (notNext) {
             p = p.not();
