@@ -81,6 +81,8 @@ public class Test {
                     .hasTag("awesome")
                     .not()
                         .hasTag("bad")
+                    .not()
+                        .isOriginalPublicationDate(1998)
                 .endAnd()
                 .query();
             

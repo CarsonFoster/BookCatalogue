@@ -12,7 +12,7 @@ import org.hibernate.Transaction;
 public abstract class HibernateUtils {
     private static SessionFactory sessionFactory;
     private static StandardServiceRegistry stdServiceReg;
-    private static final String showSql = "false";
+    private static final String showSql = "true";
 
     public static SessionFactory getSessionFactory() {
         if (sessionFactory != null) return sessionFactory;
