@@ -51,14 +51,32 @@ public class BookQuery {
         predicates = new LinkedList<>();
     }
 
+    public BookQuery removeAll() {
+        List<Book> booksToRemove = query(false);
+        getSession(); // just in case
+        for (Book b : booksToRemove) session.delete(b);
+        return this; // chaining
+    }
+
+    public BookQuery removeIf(java.util.function.Predicate<Book> condition) {
+        List<Book> booksToRemove = query(false);
+        getSession(); // just in case
+        booksToRemove.stream()
+            .filter(condition)
+            .forEach(b -> session.delete(b));
+        return this; // chaining
+    }
+
     public List<Book> query() {
         return query(true);
     }
 
     public List<Book> query(boolean storeResult) {
         if (results != null) return results;
-        if (predicates.size() != 1) throw new BookQueryException("unexpected call to query()"); // there should only be one item on the stack -- the final result
-        if (!queriedAlready) query.where(predicates.pop());
+        if (!queriedAlready) {
+            if (predicates.size() != 1) throw new BookQueryException("unexpected call to query()"); // there should only be one item on the stack -- the final result
+            query.where(predicates.pop());
+        }
 
         queriedAlready = true;
         getSession();

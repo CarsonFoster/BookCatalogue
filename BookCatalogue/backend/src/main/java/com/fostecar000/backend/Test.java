@@ -148,7 +148,7 @@ public class Test {
         //tests.add(updateBook);
         //tests.add(readBook);
         //tests.add(deleteBook);
-        tests.add(queryBasic);
+        //tests.add(queryBasic);
         //tests.add(subqueryTest);
 
         runTests(tests);
