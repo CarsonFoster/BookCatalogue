@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.Deque;
 import java.util.List;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 public class BookQuery {
     private CriteriaBuilder builder;
@@ -51,10 +52,23 @@ public class BookQuery {
         predicates = new LinkedList<>();
     }
 
+
+    // I didn't just call removeIf(b -> true) because I wanted removeAll to not use streams (to be more efficient)
     public BookQuery removeAll() {
         List<Book> booksToRemove = query(false);
         getSession(); // just in case
-        for (Book b : booksToRemove) session.delete(b);
+
+        // can't use HibernateUtils.sessionWrapper because I want to use this session
+        Transaction tx = null;
+        try (session) {
+            tx = session.beginTransaction();
+            for (Book b : booksToRemove) session.delete(b);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw e;
+        }
+        
         return this; // chaining
     }
 
@@ -63,7 +77,17 @@ public class BookQuery {
         getSession(); // just in case
         booksToRemove.stream()
             .filter(condition)
-            .forEach(b -> session.delete(b));
+            .forEach(b -> {
+                Transaction tx = null;
+                try (session) {
+                    tx = session.beginTransaction();
+                    session.delete(b);
+                    tx.commit();
+                } catch (Exception e) {
+                    if (tx != null) tx.rollback();
+                    throw e;
+                }
+            });
         return this; // chaining
     }
 

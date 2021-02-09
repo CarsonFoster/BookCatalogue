@@ -55,9 +55,9 @@ public class Test {
             Book b = new Book("Dune", "Frank", "Herbert", "scifi", "Dune", 1, 1965);
             BookCatalogue.addBook(b, "awesome", "great", "religion", "politics", "Muad'Dib");
         });
-        
-        Test queryBasic = new Test("createDummies", () -> {
-            /*Book[] dummies = createDummyBooks(50);
+
+        Test createDummies = new Test("createDummies", () -> {
+            Book[] dummies = createDummyBooks(50);
             HashMap<String, Set<Integer>> hasTag = new HashMap<>();
             String[] tags = new String[] {"awesome", "great", "good", "bad", "sad", "happy", "neutral"};
             double[] freqs = new double[] {0.1, 0.2, 0.3, 0.4, 0.33, 0.33, 0.34};
@@ -74,19 +74,7 @@ public class Test {
                 }
                 BookCatalogue.addBook(dummies[i], tagsToAdd);
                 tagsToAdd.clear();
-            }*/
-
-            List<Book> results = new BookQuery()
-                .and()
-                    .hasTag("awesome")
-                    .not()
-                        .hasTag("bad")
-                    .not()
-                        .isOriginalPublicationDate(1998)
-                .endAnd()
-                .query();
-            
-            for (Book b : results) System.out.println(b);
+            }
         });
 
         Test subqueryTest = new Test("subquery", () -> {
@@ -143,13 +131,46 @@ public class Test {
             });
         });
 
+        Test queryBasic = new Test("queryBasic", () -> {
+            List<Book> results = new BookQuery()
+                .and()
+                    .hasTag("dummy")
+                    .not()
+                        .isNumberInSeries(1)
+                    .not()
+                        .hasTag("second")
+                .endAnd()
+                .query();
+            
+            for (Book b : results) System.out.println(b);
+        });
+
+        Test addMultipleBooks = new Test("addMultipleBooks", () -> {
+            BookCatalogue.addBook(new Book("Dummy Book #1", "Carson", "Foster", "dummy", "Dummy", 1, 2021), "dummy", "first", "to_delete");
+            BookCatalogue.addBook(new Book("Dummy Book #2", "Carson", "Foster", "dummy", "Dummy", 2, 2021), "dummy", "second", "to_delete");
+            BookCatalogue.addBook(new Book("Dummy Book #3", "Carson", "Foster", "dummy", "Dummy", 3, 2021), "dummy", "third", "to_delete");
+        });
+
+        Test removeQuery = new Test("removeQuery", () -> {
+            new BookQuery()
+                .hasTag("to_delete")
+                //.removeIf(b -> b.getNumberInSeries() == 1);
+                .query()
+                .stream()
+                .filter(b -> b.getNumberInSeries() == 1)
+                .forEach(b -> System.out.println(b));
+        });
+
         //tests.add(createBook);
         //tests.add(readBook);
         //tests.add(updateBook);
         //tests.add(readBook);
         //tests.add(deleteBook);
+        //tests.add(createDummies);
         //tests.add(queryBasic);
         //tests.add(subqueryTest);
+        //tests.add(addMultipleBooks);
+        tests.add(removeQuery);
 
         runTests(tests);
     }
