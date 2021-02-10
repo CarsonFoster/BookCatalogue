@@ -24,6 +24,7 @@ public class BookQuery {
     private Deque<Boolean> isAnAndBlock;
     private Deque<Predicate> predicates;
     private List<Book> results; // only cached if told to by user
+    private static final boolean DEBUG = true; // enables assertions
 
 
     private void getBuilder() throws IllegalStateException {
@@ -56,16 +57,21 @@ public class BookQuery {
     // I didn't just call removeIf(b -> true) because I wanted removeAll to not use streams (to be more efficient)
     public BookQuery removeAll() {
         List<Book> booksToRemove = query(false);
-        getSession(); // just in case
+        getSession(); // make certain we have a session
 
         // can't use HibernateUtils.sessionWrapper because I want to use this session
+        // one transaction so that either all books are deleted or none do; otherwise there could be problems with some books being deleted while others are not
         Transaction tx = null;
-        try (session) {
+        try {
             tx = session.beginTransaction();
             for (Book b : booksToRemove) session.delete(b);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
+
+            if (DEBUG) assert (session != null);
+            session.close(); // only close it when an exception is thrown
+            session = null; // if an exception is thrown, this Session is now useless; must get another one later
             throw e;
         }
         
@@ -74,20 +80,27 @@ public class BookQuery {
 
     public BookQuery removeIf(java.util.function.Predicate<Book> condition) {
         List<Book> booksToRemove = query(false);
-        getSession(); // just in case
-        booksToRemove.stream()
+        getSession(); // make sure we have a session
+        
+        // one transaction for the whole thing, so that either all of the matching books get deleted, or none of them do
+        Transaction tx = null;
+        try {
+            tx = session.beginTransaction();
+            booksToRemove.stream()
             .filter(condition)
             .forEach(b -> {
-                Transaction tx = null;
-                try (session) {
-                    tx = session.beginTransaction();
-                    session.delete(b);
-                    tx.commit();
-                } catch (Exception e) {
-                    if (tx != null) tx.rollback();
-                    throw e;
-                }
+                session.delete(b);
             });
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            
+            if (DEBUG) assert (session != null);
+            session.close(); // only close it when an exception is thrown
+            session = null; // once an exception is thrown, this session can't be used anymore, so remove it
+            throw e;
+        }
+
         return this; // chaining
     }
 
@@ -95,6 +108,9 @@ public class BookQuery {
         return query(true);
     }
 
+    // if the results are cached, then some of the books in the list could potentially no longer be in the database, as they could have been removed afterward
+    // if the results are not cached, then at the results at the time of the first query and the second query could be different, as books could have been removed in between
+    // this is intentional behavior, and up to the client (me)
     public List<Book> query(boolean storeResult) {
         if (results != null) return results;
         if (!queriedAlready) {

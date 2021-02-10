@@ -23,4 +23,4 @@ $cpFixedArray += "backend\target"
 
 $modulePath = ($cpFixedArray -join ';')
 #& 'C:\Program Files\Java\jdk-9.0.4\bin\java' -p "$modulePath" -cp "$cp" -m backend/com.fostecar000.backend.Test
-& 'C:\Program Files\Java\jdk-11.0.10\bin\java' -p "$modulePath" -cp "$cp" -m backend/com.fostecar000.backend.Test
+& 'C:\Program Files\Java\jdk-11.0.10\bin\java' -p "$modulePath" -cp "$cp" -m backend/com.fostecar000.backend.Test -ea
