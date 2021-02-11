@@ -154,12 +154,12 @@ public class Test {
         Test removeQuery = new Test("removeQuery", () -> {
             new BookQuery()
                 .hasTag("to_delete")
-                .removeIf(b -> b.getNumberInSeries() == 1);
-            new BookQuery()
-                .hasTag("to_delete")
                 .query(false)
                 .stream()
                 .forEach(b -> System.out.println(b));
+            new BookQuery()
+                .hasTag("to_delete")
+                .removeAll();
         });
 
         //tests.add(createBook);
