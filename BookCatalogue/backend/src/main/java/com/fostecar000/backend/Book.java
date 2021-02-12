@@ -131,18 +131,18 @@ public class Book {
 		this.originalPublicationDate = originalPublicationDate;
 	}
 	
-    public Iterable<Tag> getTags() {
+    protected Iterable<Tag> getTags() {
         return tags;
     }
 
-	public boolean addTag(Tag t) {
+	protected boolean addTag(Tag t) {
 		if (tags.contains(t)) return false;
 		tags.add(t);
 		t.setBook(this);
 		return true;
 	}
 
-	public void removeTag(Tag t) {
+	protected void removeTag(Tag t) {
 		boolean contained = tags.contains(t);
 		tags.remove(t); // does nothing if tag isn't in set
 		if (contained) t.setBook(null); // if a tag that wasn't in the tags set is passed, don't null the book
