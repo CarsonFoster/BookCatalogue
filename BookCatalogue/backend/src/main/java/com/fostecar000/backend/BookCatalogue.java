@@ -22,22 +22,24 @@ public abstract class BookCatalogue {
         });
     }
 
+    public static void updateBook(Book b) {
+        HibernateUtils.sessionWrapper("update book '" + b.getTitle() + "'", s -> {
+            s.update(b);
+        });
+    }
+
     public static void updateBook(Book b, String... newTags) {
         for (String tag : tags)
             b.addTag(new Tag(tag));
         
-        HibernateUtils.sessionWrapper("update book '" + b.getTitle() + "'", s -> {
-            s.update(b);
-        });
+        updateBook(b);
     }
 
     public static void updateBook(Book b, Iterable<String> newTags) {
         for (String tag : newTags)
             b.addTag(new Tag(tag));
         
-        HibernateUtils.sessionWrapper("update book '" + b.getTitle() + "'", s -> {
-            s.update(b);
-        });
+        updateBook(b);
     }
 
     public static void removeTags(Book b, String... tagsToRemove) {
