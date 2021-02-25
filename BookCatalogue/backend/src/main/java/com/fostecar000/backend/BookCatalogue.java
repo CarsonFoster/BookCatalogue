@@ -29,7 +29,7 @@ public abstract class BookCatalogue {
     }
 
     public static void updateBook(Book b, String... newTags) {
-        for (String tag : tags)
+        for (String tag : newTags)
             b.addTag(new Tag(tag));
         
         updateBook(b);

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.io.*;
 import javax.persistence.criteria.*;
 
 
@@ -15,7 +16,13 @@ public class Test {
     private Runnable code;
 
     public static void main(String args[]) {
-        bookTests();
+        try {
+            Database db = new Database();
+            db.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //bookTests();
     }
 
     private Test(String label, Runnable code) {
