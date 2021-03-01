@@ -8,6 +8,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.Priority;
 import javafx.geometry.Pos;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -26,6 +27,9 @@ import javafx.event.ActionEvent;
 import java.util.HashMap;
 import java.awt.Toolkit;
 import java.awt.Dimension;
+import com.fostecar000.backend.Database;
+import com.fostecar000.backend.Book;
+import com.fostecar000.backend.BookCatalogue;
 
 public class Insertion extends Application {
 
@@ -34,25 +38,39 @@ public class Insertion extends Application {
 
     private static int WIDTH;
     private static int HEIGHT;
+    private Database db;
     private HashMap<String, TextField> textFields;
     private ObservableList<String> tags;
     private TextField tagField;
+    private Label successMessage;
 
-    protected static void error(String title, String msg) {
-        Alert alert = new Alert(AlertType.ERROR);
+    protected static void alert(AlertType type, String title, String msg) {
+        Alert alert = new Alert(type);
         alert.setTitle("Book Catalogue");
         alert.setHeaderText(title);
         alert.setContentText(msg);
         alert.showAndWait();
     }
 
-    public static void call() {
+    protected static void error(String title, String msg) {
+        alert(AlertType.ERROR, title, msg);
+    }
+
+    protected static void error(String title, Throwable e) {
+        StringBuilder trace = new StringBuilder();
+        for (StackTraceElement el : e.getStackTrace()) trace.append(el.toString() + "\n");
+        error(title, trace.toString());
+    }
+
+    protected static void info(String title, String msg) {
+        alert(AlertType.INFORMATION, title, msg);
+    }
+
+    public static void call(Database database) {
         try {
-            new Insertion().start(new Stage());
+            new Insertion(database).start(new Stage());
         } catch (Exception e) {
-            StringBuilder trace = new StringBuilder();
-            for (StackTraceElement el : e.getStackTrace()) trace.append(el.toString());
-            error("Could not start Insertion GUI", trace.toString());
+            error("Could not start Insertion GUI", e);
         }
     }
 
@@ -99,6 +117,7 @@ public class Insertion extends Application {
 
         tagContainer.getChildren().addAll(scroll, controls);
         tagContainer.setAlignment(Pos.CENTER);
+        tagContainer.setVgrow(scroll, Priority.NEVER);
 
         Runnable addTag = () -> {
             tags.add(tagField.getText());
@@ -117,7 +136,7 @@ public class Insertion extends Application {
         return tagContainer;
     }
 
-    private BorderPane createPane() {
+    BorderPane createPane() {
         BorderPane pane = new BorderPane();
 
         HBox center = new HBox();
@@ -125,14 +144,59 @@ public class Insertion extends Application {
         center.setSpacing(20);
         center.getChildren().addAll(createFieldInputs(), createTagInput());
 
+        Button insert = new Button("Insert Book");
+        insert.setPrefHeight(50);
+        insert.setPrefWidth(insert.getPrefHeight() * 2);
+
+        successMessage = new Label();
+
+        insert.setOnAction((ActionEvent e) -> {
+            if (db == null) {
+                error("Cannot connect to database", "Could not connect with the database.");
+                return;
+            }
+            int number, publicationDate;
+            try {
+                String numberStr = textFields.get("Number in Series").getText();
+                String pubStr = textFields.get("Original Publication Date").getText();
+                if (numberStr != null && numberStr.length() > 0) number = Integer.valueOf(numberStr);
+                else number = -1;
+                if (pubStr != null && pubStr.length() > 0) publicationDate = Integer.valueOf(pubStr);
+                else publicationDate = -1;
+            } catch (NumberFormatException ex) {
+                error("Invalid Input", "Both the 'Number in Series' and 'Original Publication Date' fields"
+                     + " must be integers, if specified.");
+                return;
+            }
+            Book b = new Book(textFields.get("Title").getText(),
+                                  textFields.get("Author's First Name").getText(),
+                                  textFields.get("Author's Last Name").getText(),
+                                  textFields.get("Genre").getText(),
+                                  textFields.get("Series Name").getText(),
+                                  number,
+                                  publicationDate);
+            try {
+                BookCatalogue.addBook(b, tags);
+            } catch (Exception ex) {
+                error("Could not insert book into database", ex);
+            }
+            successMessage.setText("Success! Inserted book '" + textFields.get("Title").getText() + "' into the database.");
+            tags.clear();
+            for (String field : FIELDS) textFields.get(field).clear();
+        });
+
+        HBox bottom = new HBox(20);
+        bottom.getChildren().addAll(successMessage, insert);
+        bottom.setAlignment(Pos.CENTER_RIGHT);
+
         pane.setCenter(center);
+        pane.setBottom(bottom);
+        BorderPane.setAlignment(bottom, Pos.BOTTOM_RIGHT);
+        BorderPane.setMargin(bottom, new Insets(20, 20, 20, 20));
         return pane;
     }
 
     public void start(Stage stage) {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        WIDTH = (int) (screenSize.getWidth() * 5.0/14.0);
-        HEIGHT = WIDTH;
         stage.setTitle("Book Catalogue: Insert Book");
         stage.setResizable(false);
         stage.setWidth(WIDTH);
@@ -141,6 +205,21 @@ public class Insertion extends Application {
         Scene scene = new Scene(createPane(), WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
+    }
+
+    public void setDatabase(Database db) {
+        this.db = db;
+    }
+
+    public Insertion() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        WIDTH = (int) (screenSize.getWidth() * 5.0/14.0);
+        HEIGHT = WIDTH;
+    }
+
+    public Insertion(Database db) {
+        this();
+        this.db = db;
     }
 
     public static void main(String[] args) {

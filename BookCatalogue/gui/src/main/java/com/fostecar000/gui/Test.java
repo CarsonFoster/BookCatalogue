@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.io.*;
-
+import com.fostecar000.backend.Database;
 
 public class Test {
     private String label;
@@ -21,7 +21,14 @@ public class Test {
         ArrayList<Test> tests = new ArrayList<>();
 
         Test insertionTest = new Test("insertionTest", () -> {
-            Insertion.main(null);
+            try (Database db = new Database()) {
+                TestGui.doInGuiThread(() -> {
+                    Insertion.call(db);
+                });
+                TestGui.main(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
 
         tests.add(insertionTest);
