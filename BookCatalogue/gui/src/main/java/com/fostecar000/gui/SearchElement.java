@@ -1,0 +1,58 @@
+package com.fostecar000.gui;
+
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Label;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.paint.Color;
+import javafx.geometry.Pos;
+
+public class SearchElement implements SearchAtom {
+    private StackPane pane;
+    private TextField text;
+    private Label label;
+    private Rectangle r;
+
+    private static final Color COLOR = Color.SLATEBLUE;
+
+    public SearchElement(String labelText) {
+        pane = new StackPane();
+        text = new TextField();
+        label = new Label(labelText);
+        label.setTextFill(Color.WHITE);
+        
+        HBox box = new HBox();
+        box.getChildren().addAll(label, text);
+        box.setAlignment(Pos.CENTER);
+        box.setSpacing(10);
+        box.setMaxWidth(Region.USE_PREF_SIZE);
+        box.setMaxHeight(Region.USE_PREF_SIZE);
+
+        r = new Rectangle();
+        r.setStroke(COLOR);
+        r.setFill(COLOR);
+        r.arcHeightProperty().bind(r.heightProperty());
+        r.arcWidthProperty().bind(r.heightProperty());
+        
+        r.widthProperty().bind(box.widthProperty().add(20));
+        r.heightProperty().bind(box.heightProperty().add(10));
+
+        pane.getChildren().addAll(r, box);
+        StackPane.setAlignment(r, Pos.CENTER);
+        StackPane.setAlignment(box, Pos.CENTER);
+    }
+
+    public StackPane getPane() {
+        return pane;
+    }
+
+    public String getText() {
+        return text.getText();
+    }
+
+    public boolean isOperator() {
+        return false;
+    }
+}

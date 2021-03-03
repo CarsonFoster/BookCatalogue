@@ -12,8 +12,6 @@ import javafx.scene.layout.Priority;
 import javafx.geometry.Pos;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
@@ -44,33 +42,11 @@ public class Insertion extends Application {
     private TextField tagField;
     private Label successMessage;
 
-    protected static void alert(AlertType type, String title, String msg) {
-        Alert alert = new Alert(type);
-        alert.setTitle("Book Catalogue");
-        alert.setHeaderText(title);
-        alert.setContentText(msg);
-        alert.showAndWait();
-    }
-
-    protected static void error(String title, String msg) {
-        alert(AlertType.ERROR, title, msg);
-    }
-
-    protected static void error(String title, Throwable e) {
-        StringBuilder trace = new StringBuilder();
-        for (StackTraceElement el : e.getStackTrace()) trace.append(el.toString() + "\n");
-        error(title, trace.toString());
-    }
-
-    protected static void info(String title, String msg) {
-        alert(AlertType.INFORMATION, title, msg);
-    }
-
     public static void call(Database database) {
         try {
             new Insertion(database).start(new Stage());
         } catch (Exception e) {
-            error("Could not start Insertion GUI", e);
+            Alert.error("Could not start Insertion GUI", e);
         }
     }
 
@@ -152,7 +128,7 @@ public class Insertion extends Application {
 
         insert.setOnAction((ActionEvent e) -> {
             if (db == null) {
-                error("Cannot connect to database", "Could not connect with the database.");
+                Alert.error("Cannot connect to database", "Could not connect with the database.");
                 return;
             }
             int number, publicationDate;
@@ -164,7 +140,7 @@ public class Insertion extends Application {
                 if (pubStr != null && pubStr.length() > 0) publicationDate = Integer.valueOf(pubStr);
                 else publicationDate = -1;
             } catch (NumberFormatException ex) {
-                error("Invalid Input", "Both the 'Number in Series' and 'Original Publication Date' fields"
+                Alert.error("Invalid Input", "Both the 'Number in Series' and 'Original Publication Date' fields"
                      + " must be integers, if specified.");
                 return;
             }
@@ -178,7 +154,7 @@ public class Insertion extends Application {
             try {
                 BookCatalogue.addBook(b, tags);
             } catch (Exception ex) {
-                error("Could not insert book into database", ex);
+                Alert.error("Could not insert book into database", ex);
             }
             successMessage.setText("Success! Inserted book '" + textFields.get("Title").getText() + "' into the database.");
             tags.clear();

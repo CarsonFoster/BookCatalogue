@@ -31,7 +31,12 @@ public class Test {
             }
         });
 
-        tests.add(insertionTest);
+        Test basicSearchCall = new Test("basicSearchCall", () -> {
+            Search.main(null);
+        });
+
+        //tests.add(insertionTest);
+        tests.add(basicSearchCall);
         
         runTests(tests);
     }
