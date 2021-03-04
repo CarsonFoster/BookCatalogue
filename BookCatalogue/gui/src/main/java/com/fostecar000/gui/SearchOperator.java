@@ -11,6 +11,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.input.DragEvent;
 import javafx.geometry.Pos;
+import javafx.geometry.Point2D;
 
 public class SearchOperator extends SearchAtom {
     private Label label;
@@ -74,19 +75,17 @@ public class SearchOperator extends SearchAtom {
         setOnDragOver(e -> {
             if (isDragAcceptable(e, this)) {
                 e.acceptTransferModes(TransferMode.MOVE);
+                boolean inLeft = false;
+                double x = e.getSceneX(), y = e.getSceneY();
+                
+                if (type != Type.NOT && leftElement == null && dropSpotContainsPoint(left, left.sceneToLocal(x, y))) {
+                    left.setStroke(DRAG_OUTLINE);
+                    inLeft = true;
+                } else left.setStroke(Color.WHITE);
+
+                if (!inLeft && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) right.setStroke(DRAG_OUTLINE); 
+                else right.setStroke(Color.WHITE);
             }
-            e.consume();
-        });
-
-        setOnDragEntered(e -> {
-            if (isDragAcceptable(e, this)) {
-
-            }
-            e.consume();
-        });
-
-        setOnDragExited(e -> {
-            
             e.consume();
         });
 
@@ -101,10 +100,19 @@ public class SearchOperator extends SearchAtom {
                     Alert.error("Unable to complete operation", "BookCatalogue was unable to complete the drag-and-drop operation");
                     return;
                 }
-                source.removeFromParent();
-                setRight(source);
-                source.setParent(box);
-                success = true;
+                
+                double x = e.getSceneX(), y = e.getSceneY();
+                if (type != Type.NOT && leftElement == null && dropSpotContainsPoint(left, left.sceneToLocal(x, y))) {
+                    source.removeFromParent();
+                    setLeft(source);
+                    source.setParent(box, this, true);
+                    success = true;
+                } else if (rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) {
+                    source.removeFromParent();
+                    setRight(source);
+                    source.setParent(box, this, false);
+                    success = true;
+                }
             }
             e.setDropCompleted(success);
             e.consume();
@@ -115,6 +123,22 @@ public class SearchOperator extends SearchAtom {
         if (e.getGestureSource() == target) return false;
         Dragboard db = e.getDragboard();
         return db.hasString() && db.getString().equals("f0S");
+    }
+
+    private static double square(double num) {
+        return num * num;
+    }
+
+    private static double distanceSquared(double centerX, double centerY, double x, double y) {
+        return square(centerX - x) + square(centerY - y);
+    }
+
+    private static boolean dropSpotContainsPoint(Rectangle target, Point2D point) {
+        double x = point.getX(), y = point.getY();
+        double rectW = target.getWidth(), rectH = target.getHeight(), rectDiameter = rectH;
+        if (x >= rectDiameter/2 && x <= rectW - rectDiameter/2 && y >= 0 && y <= rectH) return true; // check the rectangular part of the drop spot
+        return ((distanceSquared(rectDiameter/2, rectH/2, x, y) <= square(rectDiameter)/4) || 
+                (distanceSquared(rectW - rectDiameter/2, rectH/2, x, y) <= square(rectDiameter)/4));
     }
 
     public boolean isOperator() {
@@ -134,6 +158,14 @@ public class SearchOperator extends SearchAtom {
     public void setRight(SearchAtom newRight) {
         rightElement = newRight;
         resetChildren();
+    }
+
+    public void removeLeft() {
+        setLeft(null);
+    }
+
+    public void removeRight() {
+        setRight(null);
     }
 
     private void resetChildren() {

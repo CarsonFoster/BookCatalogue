@@ -4,30 +4,19 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.Priority;
 import javafx.geometry.Pos;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Button;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.ListView;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.KeyCode;
-import javafx.collections.ObservableList;
-import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
-import java.util.HashMap;
 import java.awt.Toolkit;
 import java.awt.Dimension;
 import com.fostecar000.backend.Database;
 import com.fostecar000.backend.Book;
 import com.fostecar000.backend.BookCatalogue;
+
+import javafx.scene.shape.*;
+import javafx.scene.paint.Color;
 
 public class Search extends Application {
 

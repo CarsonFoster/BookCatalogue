@@ -10,6 +10,8 @@ import javafx.scene.input.MouseEvent;
 public abstract class SearchAtom extends StackPane {
     //protected StackPane pane;
     protected Pane parent;
+    protected SearchOperator parentAtom;
+    protected boolean isLeft;
 
     public abstract boolean isOperator();
     
@@ -43,10 +45,22 @@ public abstract class SearchAtom extends StackPane {
         this.parent = parent;
     }
 
+    public void setParent(Pane parent, SearchOperator parentAtom, boolean isLeft) {
+        if (this.parent != null) throw new RuntimeException("already has a parent");
+        this.parent = parent;
+        this.parentAtom = parentAtom;
+        this.isLeft = isLeft;
+    }
+
     public void removeFromParent() {
         if (parent == null) throw new RuntimeException("no parent to remove");
         parent.getChildren().remove(this);
         parent = null;
+        if (parentAtom != null) {
+            if (isLeft) parentAtom.removeLeft();
+            else parentAtom.removeRight();
+            parentAtom = null;
+        }
     }
 
     /*public StackPane getPane() {
