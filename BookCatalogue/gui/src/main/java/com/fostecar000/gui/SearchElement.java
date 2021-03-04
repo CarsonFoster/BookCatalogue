@@ -9,8 +9,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.paint.Color;
 import javafx.geometry.Pos;
 
-public class SearchElement implements SearchAtom {
-    private StackPane pane;
+public class SearchElement extends SearchAtom {
     private TextField text;
     private Label label;
     private Rectangle r;
@@ -18,7 +17,7 @@ public class SearchElement implements SearchAtom {
     private static final Color COLOR = Color.SLATEBLUE;
 
     public SearchElement(String labelText) {
-        pane = new StackPane();
+        super();
         text = new TextField();
         label = new Label(labelText);
         label.setTextFill(Color.WHITE);
@@ -39,13 +38,9 @@ public class SearchElement implements SearchAtom {
         r.widthProperty().bind(box.widthProperty().add(20));
         r.heightProperty().bind(box.heightProperty().add(10));
 
-        pane.getChildren().addAll(r, box);
+        getChildren().addAll(r, box);
         StackPane.setAlignment(r, Pos.CENTER);
         StackPane.setAlignment(box, Pos.CENTER);
-    }
-
-    public StackPane getPane() {
-        return pane;
     }
 
     public String getText() {

@@ -54,19 +54,22 @@ public class Search extends Application {
 
         BorderPane p = new BorderPane();
         SearchElement authorFirst = new SearchElement("Author's First Name:");
-        SearchOperator and = new SearchOperator(true);
-        //and.setLeft(authorFirst);
-        p.setCenter(and.getPane());
+        SearchOperator and = new SearchOperator(SearchOperator.Type.AND);
+        VBox x = new VBox();
+        authorFirst.addToPane(x);
+        and.addToPane(x);
+        x.setAlignment(Pos.CENTER);
+        p.setCenter(x);
 
         Scene scene = new Scene(p, WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
 
-        try {
+        /*try {
             Thread.sleep(50);
         } catch (Exception e) {
         }
-        and.setLeft(authorFirst);
+        and.setRight(authorFirst);*/
     }
 
     public void setDatabase(Database db) {
