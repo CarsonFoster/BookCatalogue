@@ -35,22 +35,34 @@ public class Search extends Application {
         }
     }
 
+    private VBox getInitialSearchNodes() {
+        VBox v = new VBox();
+        v.setSpacing(10);
+        v.setAlignment(Pos.CENTER);
+
+        SearchOperator and = new SearchOperator(SearchOperator.Type.AND);
+        SearchOperator or = new SearchOperator(SearchOperator.Type.OR);
+        SearchOperator not = new SearchOperator(SearchOperator.Type.NOT);
+
+        and.addToPane(v);
+        or.addToPane(v);
+        not.addToPane(v);
+
+        for (String field : FIELDS) {
+            SearchElement el = new SearchElement(field + ":");
+            el.addToPane(v);
+        }
+
+        return v;
+    }
+
     public void start(Stage stage) {
         stage.setTitle("Book Catalogue: Book Search");
         stage.setResizable(false);
         stage.setWidth(WIDTH);
         stage.setHeight(HEIGHT);
 
-        BorderPane p = new BorderPane();
-        SearchElement authorFirst = new SearchElement("Author's First Name:");
-        SearchOperator and = new SearchOperator(SearchOperator.Type.AND);
-        VBox x = new VBox();
-        authorFirst.addToPane(x);
-        and.addToPane(x);
-        x.setAlignment(Pos.CENTER);
-        p.setCenter(x);
-
-        Scene scene = new Scene(p, WIDTH, HEIGHT);
+        Scene scene = new Scene(getInitialSearchNodes(), WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
 

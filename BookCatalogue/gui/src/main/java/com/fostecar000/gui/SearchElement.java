@@ -8,6 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.paint.Color;
 import javafx.geometry.Pos;
+import javafx.beans.binding.Bindings;
 
 public class SearchElement extends SearchAtom {
     private TextField text;
@@ -19,6 +20,7 @@ public class SearchElement extends SearchAtom {
     public SearchElement(String labelText) {
         super();
         text = new TextField();
+        text.prefColumnCountProperty().bind(Bindings.min(8, Bindings.max(1, text.lengthProperty())));
         label = new Label(labelText);
         label.setTextFill(Color.WHITE);
         
@@ -45,6 +47,10 @@ public class SearchElement extends SearchAtom {
 
     public String getText() {
         return text.getText();
+    }
+
+    public String getLabelText() {
+        return label.getText();
     }
 
     public boolean isOperator() {

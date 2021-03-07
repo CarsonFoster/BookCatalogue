@@ -20,7 +20,9 @@ public class SearchOperator extends SearchAtom {
     private HBox box;
     private Type type;
 
-    private static final Color COLOR = Color.rgb(189, 205, 90);
+    private static final Color COLOR_AND = Color.rgb(189, 205, 90);
+    private static final Color COLOR_OR = Color.rgb(104, 69, 143);
+    private static final Color COLOR_NOT = Color.rgb(176, 77, 124);
     private static final Color DRAG_OUTLINE = Color.FORESTGREEN;
 
     public static enum Type {
@@ -31,7 +33,6 @@ public class SearchOperator extends SearchAtom {
         super();
         this.type = type;
         label = new Label((type == Type.AND ? "AND" : (type == Type.OR ? "OR" : "NOT")));
-        //label.setTextFill(Color.WHITE);
         
         if (type != Type.NOT) {
             left = new Rectangle();
@@ -61,11 +62,25 @@ public class SearchOperator extends SearchAtom {
         
 
         background = new Rectangle();
-        background.setStroke(COLOR);
-        background.setFill(COLOR);
+        switch (type) {
+            case AND:
+                background.setStroke(COLOR_AND);
+                background.setFill(COLOR_AND);
+                break;
+            case OR:
+                background.setStroke(COLOR_OR);
+                background.setFill(COLOR_OR);
+                label.setTextFill(Color.WHITE);
+                break;
+            case NOT:
+                background.setStroke(COLOR_NOT);
+                background.setFill(COLOR_NOT);
+                label.setTextFill(Color.WHITE);
+                break;
+        }
         background.arcHeightProperty().bind(background.heightProperty());
         background.arcWidthProperty().bind(background.heightProperty());
-        background.widthProperty().bind(box.widthProperty().add(20));
+        background.widthProperty().bind(box.widthProperty().add(10));
         background.heightProperty().bind(box.heightProperty().add(10));
 
         getChildren().addAll(background, box);
@@ -81,8 +96,8 @@ public class SearchOperator extends SearchAtom {
                 if (type != Type.NOT && leftElement == null && dropSpotContainsPoint(left, left.sceneToLocal(x, y))) {
                     left.setStroke(DRAG_OUTLINE);
                     inLeft = true;
-                } else left.setStroke(Color.WHITE);
-
+                } else if (type != Type.NOT) left.setStroke(Color.WHITE);
+                
                 if (!inLeft && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) right.setStroke(DRAG_OUTLINE); 
                 else right.setStroke(Color.WHITE);
             }
