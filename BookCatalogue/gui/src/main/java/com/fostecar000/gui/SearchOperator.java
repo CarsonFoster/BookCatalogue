@@ -10,6 +10,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.input.DragEvent;
+import javafx.scene.text.Text;
 import javafx.geometry.Pos;
 import javafx.geometry.Point2D;
 
@@ -23,34 +24,46 @@ public class SearchOperator extends SearchAtom {
     private static final Color COLOR_AND = Color.rgb(189, 205, 90);
     private static final Color COLOR_OR = Color.rgb(104, 69, 143);
     private static final Color COLOR_NOT = Color.rgb(176, 77, 124);
+    private static final Color COLOR_BLANK = Color.rgb(0, 0, 0, 0); // completely transparent
+    private static final Color COLOR_BLANK_INNER = Color.rgb(100, 100, 100);
     private static final Color DRAG_OUTLINE = Color.FORESTGREEN;
 
     public static enum Type {
-        AND, OR, NOT;
+        AND, OR, NOT, BLANK;
     }
 
     public SearchOperator(Type type) {
         super();
         this.type = type;
-        label = new Label((type == Type.AND ? "AND" : (type == Type.OR ? "OR" : "NOT")));
+        if (type != Type.BLANK)
+            label = new Label((type == Type.AND ? "AND" : (type == Type.OR ? "OR" : "NOT")));
+        else setOnDragDetected(null); // cannot drag blank SearchAtoms
         
         if (type != Type.NOT) {
             left = new Rectangle();
-            left.setStroke(Color.WHITE);
-            left.setFill(Color.WHITE);
+            if (type != Type.BLANK) {
+                left.setStroke(Color.WHITE);
+                left.setFill(Color.WHITE);
+                left.heightProperty().bind(label.heightProperty());
+            } else {
+                left.setStroke(COLOR_BLANK_INNER);
+                left.setFill(COLOR_BLANK_INNER);
+                left.setHeight(new Text("").getLayoutBounds().getHeight());
+            }
             left.arcHeightProperty().bind(left.heightProperty());
             left.arcWidthProperty().bind(left.heightProperty());
             left.setWidth(50);
-            left.heightProperty().bind(label.heightProperty());
         }
 
-        right = new Rectangle();
-        right.setStroke(Color.WHITE);
-        right.setFill(Color.WHITE);
-        right.arcHeightProperty().bind(right.heightProperty());
-        right.arcWidthProperty().bind(right.heightProperty());
-        right.setWidth(50);
-        right.heightProperty().bind(label.heightProperty());
+        if (type != Type.BLANK) {
+            right = new Rectangle();
+            right.setStroke(Color.WHITE);
+            right.setFill(Color.WHITE);
+            right.arcHeightProperty().bind(right.heightProperty());
+            right.arcWidthProperty().bind(right.heightProperty());
+            right.setWidth(50);
+            right.heightProperty().bind(label.heightProperty());
+        }
 
         box = new HBox();
         box.setAlignment(Pos.CENTER);
@@ -58,7 +71,7 @@ public class SearchOperator extends SearchAtom {
         box.setMaxWidth(Region.USE_PREF_SIZE);
         box.setMaxHeight(Region.USE_PREF_SIZE);
         if (type != Type.NOT) box.getChildren().add(left);
-        box.getChildren().addAll(label, right);
+        if (type != Type.BLANK) box.getChildren().addAll(label, right);
         
 
         background = new Rectangle();
@@ -76,6 +89,10 @@ public class SearchOperator extends SearchAtom {
                 background.setStroke(COLOR_NOT);
                 background.setFill(COLOR_NOT);
                 label.setTextFill(Color.WHITE);
+                break;
+            case BLANK:
+                background.setStroke(COLOR_BLANK);
+                background.setFill(COLOR_BLANK);
                 break;
         }
         background.arcHeightProperty().bind(background.heightProperty());
@@ -98,8 +115,8 @@ public class SearchOperator extends SearchAtom {
                     inLeft = true;
                 } else if (type != Type.NOT) left.setStroke(Color.WHITE);
                 
-                if (!inLeft && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) right.setStroke(DRAG_OUTLINE); 
-                else right.setStroke(Color.WHITE);
+                if (type != Type.BLANK && !inLeft && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) right.setStroke(DRAG_OUTLINE); 
+                else if (type != Type.BLANK) right.setStroke(Color.WHITE);
             }
             e.consume();
         });
@@ -111,22 +128,23 @@ public class SearchOperator extends SearchAtom {
                 SearchAtom source;
                 try {
                     source = (SearchAtom) e.getGestureSource();
+                
+                    double x = e.getSceneX(), y = e.getSceneY();
+                    if (type != Type.NOT && leftElement == null && dropSpotContainsPoint(left, left.sceneToLocal(x, y))) {
+                        source.removeFromParent();
+                        setLeft(source);
+                        source.setParent(box, this, true);
+                        success = true;
+                    } else if (type != Type.BLANK && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) {
+                        source.removeFromParent();
+                        setRight(source);
+                        source.setParent(box, this, false);
+                        success = true;
+                    }
                 } catch (Exception err) {
                     Alert.error("Unable to complete operation", "BookCatalogue was unable to complete the drag-and-drop operation");
+                    //err.printStackTrace();
                     return;
-                }
-                
-                double x = e.getSceneX(), y = e.getSceneY();
-                if (type != Type.NOT && leftElement == null && dropSpotContainsPoint(left, left.sceneToLocal(x, y))) {
-                    source.removeFromParent();
-                    setLeft(source);
-                    source.setParent(box, this, true);
-                    success = true;
-                } else if (rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) {
-                    source.removeFromParent();
-                    setRight(source);
-                    source.setParent(box, this, false);
-                    success = true;
                 }
             }
             e.setDropCompleted(success);
@@ -187,6 +205,10 @@ public class SearchOperator extends SearchAtom {
         box.getChildren().clear();
         if (type != Type.NOT && leftElement == null) box.getChildren().add(left);
         else if (type != Type.NOT) box.getChildren().add(leftElement);
-        box.getChildren().addAll(label, (rightElement == null ? right : rightElement));
+        if (type != type.BLANK) box.getChildren().addAll(label, (rightElement == null ? right : rightElement));
+    }
+
+    protected SearchAtom deepCopy() {
+        return new SearchOperator(type());
     }
 }

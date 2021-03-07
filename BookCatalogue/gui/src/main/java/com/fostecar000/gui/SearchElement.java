@@ -45,6 +45,10 @@ public class SearchElement extends SearchAtom {
         StackPane.setAlignment(box, Pos.CENTER);
     }
 
+    protected SearchAtom deepCopy() {
+        return new SearchElement(getLabelText());
+    }
+
     public String getText() {
         return text.getText();
     }
