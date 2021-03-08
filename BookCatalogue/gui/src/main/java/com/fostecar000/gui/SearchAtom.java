@@ -2,6 +2,7 @@ package com.fostecar000.gui;
 
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.Group;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.input.ClipboardContent;
@@ -15,6 +16,7 @@ public abstract class SearchAtom extends StackPane {
     protected boolean isLeft;
     protected boolean replace;
     protected BiConsumer<Pane, SearchAtom> replaceFunction;
+    protected Group drawingGroup;
 
     public abstract boolean isOperator();
     protected abstract SearchAtom deepCopy();
@@ -26,7 +28,7 @@ public abstract class SearchAtom extends StackPane {
             Dragboard db = startDragAndDrop(TransferMode.MOVE);
 
             ClipboardContent content = new ClipboardContent();
-            content.putString("f0S"); // for [f]ostecar00[0] [S]earching
+            content.putString(Search.dragboardIdentifier); // for [f]ostecar00[0] [S]earching
             db.setContent(content);
             e.consume();
         });
@@ -35,6 +37,10 @@ public abstract class SearchAtom extends StackPane {
             // TODO
             e.consume();
         });
+    }
+
+    public void setDrawingGroup(Group g) {
+        drawingGroup = g;
     }
 
     public void addToPane(Pane parent) {

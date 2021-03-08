@@ -6,10 +6,13 @@ import javafx.scene.layout.Region;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Line;
 import javafx.scene.paint.Color;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.input.DragEvent;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.text.Text;
 import javafx.geometry.Pos;
 import javafx.geometry.Point2D;
@@ -18,6 +21,8 @@ public class SearchOperator extends SearchAtom {
     private Label label;
     private Rectangle background, left, right;
     private SearchAtom leftElement, rightElement;
+    private boolean leftIsLinked, rightIsLinked;
+    private SearchAtom leftLink, rightLink;
     private HBox box;
     private Type type;
 
@@ -27,6 +32,7 @@ public class SearchOperator extends SearchAtom {
     private static final Color COLOR_BLANK = Color.rgb(0, 0, 0, 0); // completely transparent
     private static final Color COLOR_BLANK_INNER = Color.rgb(100, 100, 100);
     private static final Color DRAG_OUTLINE = Color.FORESTGREEN;
+    private static final double TRIANGLE_HEIGHT_WIDTH = 10;
 
     public static enum Type {
         AND, OR, NOT, BLANK;
@@ -70,6 +76,24 @@ public class SearchOperator extends SearchAtom {
         box.setSpacing(10);
         box.setMaxWidth(Region.USE_PREF_SIZE);
         box.setMaxHeight(Region.USE_PREF_SIZE);
+        if (type == Type.BLANK) {
+            box.setSpacing(0);
+            Polygon triangle = new Polygon(0, 0, TRIANGLE_HEIGHT_WIDTH, TRIANGLE_HEIGHT_WIDTH/2, TRIANGLE_HEIGHT_WIDTH, -TRIANGLE_HEIGHT_WIDTH/2);
+            triangle.setFill(COLOR_BLANK_INNER);
+            triangle.setStroke(COLOR_BLANK_INNER);
+
+            triangle.setOnDragDetected(e -> {
+                Dragboard db = triangle.startDragAndDrop(TransferMode.COPY);
+
+                ClipboardContent content = new ClipboardContent();
+                content.putString(Search.dragboardIdentifier);
+                db.setContent(content);
+                e.consume();
+                System.out.println("started triangle");
+            });
+
+            box.getChildren().add(triangle);
+        }
         if (type != Type.NOT) box.getChildren().add(left);
         if (type != Type.BLANK) box.getChildren().addAll(label, right);
         
@@ -106,17 +130,22 @@ public class SearchOperator extends SearchAtom {
 
         setOnDragOver(e -> {
             if (isDragAcceptable(e, this)) {
-                e.acceptTransferModes(TransferMode.MOVE);
+                e.acceptTransferModes(TransferMode.MOVE, TransferMode.COPY);
                 boolean inLeft = false;
                 double x = e.getSceneX(), y = e.getSceneY();
                 
                 if (type != Type.NOT && leftElement == null && dropSpotContainsPoint(left, left.sceneToLocal(x, y))) {
                     left.setStroke(DRAG_OUTLINE);
                     inLeft = true;
+                    drawLine(e, left);
                 } else if (type != Type.NOT) left.setStroke(Color.WHITE);
                 
-                if (type != Type.BLANK && !inLeft && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) right.setStroke(DRAG_OUTLINE); 
-                else if (type != Type.BLANK) right.setStroke(Color.WHITE);
+                if (type != Type.BLANK && !inLeft && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) {
+                    right.setStroke(DRAG_OUTLINE); 
+                    drawLine(e, right);
+                } else if (type != Type.BLANK) right.setStroke(Color.WHITE);
+
+                
             }
             e.consume();
         });
@@ -124,7 +153,7 @@ public class SearchOperator extends SearchAtom {
         setOnDragDropped(e -> {
             Dragboard db = e.getDragboard();
             boolean success = false;
-            if (db.hasString() && db.getString().equals("f0S")) {
+            if (db.hasString() && db.getString().equals(Search.dragboardIdentifier)) {
                 SearchAtom source;
                 try {
                     source = (SearchAtom) e.getGestureSource();
@@ -143,6 +172,7 @@ public class SearchOperator extends SearchAtom {
                     }
                 } catch (Exception err) {
                     Alert.error("Unable to complete operation", "BookCatalogue was unable to complete the drag-and-drop operation");
+                    e.setDropCompleted(false);
                     //err.printStackTrace();
                     return;
                 }
@@ -152,10 +182,27 @@ public class SearchOperator extends SearchAtom {
         });
     }
 
+    private void drawLine(DragEvent e, Rectangle rect) {
+        if (e.getAcceptedTransferMode() == TransferMode.COPY) {
+            System.out.println("here");
+            // from a Polygon in a blank node
+            Polygon triangle;
+            try {
+                triangle = (Polygon) e.getGestureSource();
+            } catch (Exception err) { 
+                err.printStackTrace();
+                return; }
+            Point2D triangleOrigin = triangle.localToScene(0, 0);
+            Point2D rectCenter = rect.localToScene(rect.getX() + rect.getWidth()/2, rect.getY() + rect.getHeight()/2);
+            Line line = new Line(triangleOrigin.getX(), triangleOrigin.getY(), rectCenter.getX(), rectCenter.getY());
+            drawingGroup.getChildren().add(line);
+        }
+    }
+
     private static boolean isDragAcceptable(DragEvent e, StackPane target) {
         if (e.getGestureSource() == target) return false;
         Dragboard db = e.getDragboard();
-        return db.hasString() && db.getString().equals("f0S");
+        return db.hasString() && db.getString().equals(Search.dragboardIdentifier);
     }
 
     private static double square(double num) {

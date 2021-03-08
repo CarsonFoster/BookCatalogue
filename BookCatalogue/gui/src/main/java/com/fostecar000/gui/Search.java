@@ -7,6 +7,11 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.Group;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.Node;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.event.ActionEvent;
@@ -28,6 +33,8 @@ public class Search extends Application {
     private static int WIDTH;
     private static int HEIGHT;
     private Database db;
+    private SearchOperator root;
+    public static String dragboardIdentifier = "f0S";
 
     public static void call(Database database) {
         try {
@@ -47,7 +54,7 @@ public class Search extends Application {
         };
     }
 
-    private VBox getInitialSearchNodes() {
+    private VBox getInitialSearchNodes(Group drawingGroup) {
         VBox v = new VBox();
         v.setSpacing(10);
         v.setAlignment(Pos.CENTER);
@@ -66,15 +73,65 @@ public class Search extends Application {
             el.addToPane(v, createReplacementFunction(3 + i));
         }
 
+        SearchOperator blank = new SearchOperator(SearchOperator.Type.BLANK);
+        blank.addToPane(v, createReplacementFunction(3 + FIELDS.length));
+
+        v.setOnDragOver(e -> {
+            if (e.getGestureSource() != this) {
+                Dragboard db = e.getDragboard();
+                if (db.hasString() && db.getString().equals(dragboardIdentifier)) {
+                    e.acceptTransferModes(TransferMode.MOVE);
+                }
+            }
+            e.consume();
+        });
+
+        v.setOnDragDropped(e -> {
+            Dragboard db = e.getDragboard();
+            boolean success = false;
+
+            if (db.hasString() && db.getString().equals(dragboardIdentifier)) {
+                SearchAtom source;
+                try {
+                    source = (SearchAtom) e.getGestureSource();
+                    source.removeFromParent(); // remove nodes dropped on the vbox
+                    success = true;
+                } catch (Exception err) {
+                    Alert.error("Unable to complete operation", "BookCatalogue was unable to complete the drag-and-drop operation");
+                    e.setDropCompleted(false);
+                    return;
+                }
+            }
+
+            e.setDropCompleted(success);
+            e.consume();
+        });
+
+        for (Node n : v.getChildren()) {
+            ((SearchAtom)n).setDrawingGroup(drawingGroup);
+        }
+
         return v;
     }
 
-    private BorderPane getPane() {
+    private StackPane getPane(Group drawingGroup) {
+        StackPane base = new StackPane();
+        
         BorderPane pane = new BorderPane();
+        VBox initials = getInitialSearchNodes(drawingGroup);
 
-        //pane.setCenter();
-        pane.setLeft(getInitialSearchNodes());
-        return pane;
+        ScrollPane center = new ScrollPane();
+        center.setContent(root);
+        center.setPrefSize(WIDTH - initials.getPrefWidth(), HEIGHT);
+
+        pane.setCenter(center);
+        pane.setRight(initials);
+        BorderPane.setMargin(initials, new Insets(0, 20, 0, 20));
+        
+        base.getChildren().add(pane);
+        base.getChildren().add(drawingGroup);
+        
+        return base;
     }
 
     public void start(Stage stage) {
@@ -83,7 +140,7 @@ public class Search extends Application {
         stage.setWidth(WIDTH);
         stage.setHeight(HEIGHT);
 
-        Scene scene = new Scene(getPane(), WIDTH, HEIGHT);
+        Scene scene = new Scene(getPane(new Group()), WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
 
@@ -100,8 +157,9 @@ public class Search extends Application {
 
     public Search() {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        WIDTH = Math.rint(screenSize.getWidth() * 0.5);
+        WIDTH = (int)(screenSize.getWidth() * 0.5);
         HEIGHT = WIDTH;
+        root = new SearchOperator(SearchOperator.Type.BLANK);
     }
 
     public Search(Database db) {
