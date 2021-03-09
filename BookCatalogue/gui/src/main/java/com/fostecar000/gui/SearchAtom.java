@@ -10,13 +10,12 @@ import javafx.scene.input.MouseEvent;
 import java.util.function.BiConsumer;
 
 public abstract class SearchAtom extends StackPane {
-    //protected StackPane pane;
     protected Pane parent;
     protected SearchOperator parentAtom;
     protected boolean isLeft;
     protected boolean replace;
     protected BiConsumer<Pane, SearchAtom> replaceFunction;
-    protected Group drawingGroup;
+    //protected Group drawingGroup;
 
     public abstract boolean isOperator();
     protected abstract SearchAtom deepCopy();
@@ -39,9 +38,9 @@ public abstract class SearchAtom extends StackPane {
         });
     }
 
-    public void setDrawingGroup(Group g) {
+    /*public void setDrawingGroup(Group g) {
         drawingGroup = g;
-    }
+    }*/
 
     public void addToPane(Pane parent) {
         addToPane(parent, null);

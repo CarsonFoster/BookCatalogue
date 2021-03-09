@@ -21,11 +21,10 @@ public class SearchOperator extends SearchAtom {
     private Label label;
     private Rectangle background, left, right;
     private SearchAtom leftElement, rightElement;
-    private boolean leftIsLinked, rightIsLinked;
-    private SearchAtom leftLink, rightLink;
     private HBox box;
     private Type type;
 
+    private static final Color COLOR_STROKE = Color.GREY;
     private static final Color COLOR_AND = Color.rgb(189, 205, 90);
     private static final Color COLOR_OR = Color.rgb(104, 69, 143);
     private static final Color COLOR_NOT = Color.rgb(176, 77, 124);
@@ -76,7 +75,7 @@ public class SearchOperator extends SearchAtom {
         box.setSpacing(10);
         box.setMaxWidth(Region.USE_PREF_SIZE);
         box.setMaxHeight(Region.USE_PREF_SIZE);
-        if (type == Type.BLANK) {
+        /*if (type == Type.BLANK) {
             box.setSpacing(0);
             Polygon triangle = new Polygon(0, 0, TRIANGLE_HEIGHT_WIDTH, TRIANGLE_HEIGHT_WIDTH/2, TRIANGLE_HEIGHT_WIDTH, -TRIANGLE_HEIGHT_WIDTH/2);
             triangle.setFill(COLOR_BLANK_INNER);
@@ -93,29 +92,30 @@ public class SearchOperator extends SearchAtom {
             });
 
             box.getChildren().add(triangle);
-        }
+        }*/
         if (type != Type.NOT) box.getChildren().add(left);
         if (type != Type.BLANK) box.getChildren().addAll(label, right);
         
 
         background = new Rectangle();
+        if (type != Type.BLANK) {
+            background.setStrokeWidth(1);
+            background.setStroke(COLOR_STROKE);
+        }
+        
         switch (type) {
             case AND:
-                background.setStroke(COLOR_AND);
                 background.setFill(COLOR_AND);
                 break;
             case OR:
-                background.setStroke(COLOR_OR);
                 background.setFill(COLOR_OR);
                 label.setTextFill(Color.WHITE);
                 break;
             case NOT:
-                background.setStroke(COLOR_NOT);
                 background.setFill(COLOR_NOT);
                 label.setTextFill(Color.WHITE);
                 break;
             case BLANK:
-                background.setStroke(COLOR_BLANK);
                 background.setFill(COLOR_BLANK);
                 break;
         }
@@ -130,19 +130,19 @@ public class SearchOperator extends SearchAtom {
 
         setOnDragOver(e -> {
             if (isDragAcceptable(e, this)) {
-                e.acceptTransferModes(TransferMode.MOVE, TransferMode.COPY);
+                e.acceptTransferModes(TransferMode.MOVE);//, TransferMode.COPY);
                 boolean inLeft = false;
                 double x = e.getSceneX(), y = e.getSceneY();
                 
                 if (type != Type.NOT && leftElement == null && dropSpotContainsPoint(left, left.sceneToLocal(x, y))) {
                     left.setStroke(DRAG_OUTLINE);
                     inLeft = true;
-                    drawLine(e, left);
+                    //drawLine(e, left);
                 } else if (type != Type.NOT) left.setStroke(Color.WHITE);
                 
                 if (type != Type.BLANK && !inLeft && rightElement == null && dropSpotContainsPoint(right, right.sceneToLocal(x, y))) {
                     right.setStroke(DRAG_OUTLINE); 
-                    drawLine(e, right);
+                    //drawLine(e, right);
                 } else if (type != Type.BLANK) right.setStroke(Color.WHITE);
 
                 
@@ -182,7 +182,7 @@ public class SearchOperator extends SearchAtom {
         });
     }
 
-    private void drawLine(DragEvent e, Rectangle rect) {
+    /*private void drawLine(DragEvent e, Rectangle rect) {
         if (e.getAcceptedTransferMode() == TransferMode.COPY) {
             System.out.println("here");
             // from a Polygon in a blank node
@@ -197,7 +197,7 @@ public class SearchOperator extends SearchAtom {
             Line line = new Line(triangleOrigin.getX(), triangleOrigin.getY(), rectCenter.getX(), rectCenter.getY());
             drawingGroup.getChildren().add(line);
         }
-    }
+    }*/
 
     private static boolean isDragAcceptable(DragEvent e, StackPane target) {
         if (e.getGestureSource() == target) return false;
@@ -236,6 +236,7 @@ public class SearchOperator extends SearchAtom {
     }
 
     public void setRight(SearchAtom newRight) {
+        if (type == Type.BLANK) throw new RuntimeException("there is no right element to set when it is a blank operator");
         rightElement = newRight;
         resetChildren();
     }
@@ -246,6 +247,14 @@ public class SearchOperator extends SearchAtom {
 
     public void removeRight() {
         setRight(null);
+    }
+
+    public SearchAtom getLeft() {
+        return leftElement;
+    }
+
+    public SearchAtom getRight() {
+        return rightElement;
     }
 
     private void resetChildren() {

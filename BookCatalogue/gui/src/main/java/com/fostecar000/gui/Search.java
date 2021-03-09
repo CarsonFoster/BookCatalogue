@@ -18,9 +18,10 @@ import javafx.event.ActionEvent;
 import java.awt.Toolkit;
 import java.awt.Dimension;
 import java.util.function.BiConsumer;
+import java.util.Stack;
 import com.fostecar000.backend.Database;
-import com.fostecar000.backend.Book;
-import com.fostecar000.backend.BookCatalogue;
+import com.fostecar000.backend.BookQueryException;
+import com.fostecar000.backend.BookQuery;
 
 import javafx.scene.shape.*;
 import javafx.scene.paint.Color;
@@ -54,7 +55,7 @@ public class Search extends Application {
         };
     }
 
-    private VBox getInitialSearchNodes(Group drawingGroup) {
+    private VBox getInitialSearchNodes() { //Group drawingGroup) {
         VBox v = new VBox();
         v.setSpacing(10);
         v.setAlignment(Pos.CENTER);
@@ -73,8 +74,8 @@ public class Search extends Application {
             el.addToPane(v, createReplacementFunction(3 + i));
         }
 
-        SearchOperator blank = new SearchOperator(SearchOperator.Type.BLANK);
-        blank.addToPane(v, createReplacementFunction(3 + FIELDS.length));
+        //SearchOperator blank = new SearchOperator(SearchOperator.Type.BLANK);
+        //blank.addToPane(v, createReplacementFunction(3 + FIELDS.length));
 
         v.setOnDragOver(e -> {
             if (e.getGestureSource() != this) {
@@ -107,18 +108,18 @@ public class Search extends Application {
             e.consume();
         });
 
-        for (Node n : v.getChildren()) {
+        /*for (Node n : v.getChildren()) {
             ((SearchAtom)n).setDrawingGroup(drawingGroup);
-        }
+        }*/
 
         return v;
     }
 
-    private StackPane getPane(Group drawingGroup) {
-        StackPane base = new StackPane();
+    private BorderPane getPane() { //Group drawingGroup) {
+        // StackPane base = new StackPane();
         
         BorderPane pane = new BorderPane();
-        VBox initials = getInitialSearchNodes(drawingGroup);
+        VBox initials = getInitialSearchNodes(); // drawingGroup);
 
         ScrollPane center = new ScrollPane();
         center.setContent(root);
@@ -128,10 +129,89 @@ public class Search extends Application {
         pane.setRight(initials);
         BorderPane.setMargin(initials, new Insets(0, 20, 0, 20));
         
-        base.getChildren().add(pane);
-        base.getChildren().add(drawingGroup);
+        // base.getChildren().add(pane);
+        // base.getChildren().add(drawingGroup);
         
-        return base;
+        return pane; // base;
+    }
+
+    private void interpret(BookQuery query, SearchAtom atom) throws NumberFormatException, BookQueryException {
+        if (atom == null) return;
+        if (atom.isOperator()) {
+            SearchOperator op = (SearchOperator) atom;
+            SearchAtom left = op.getLeft();
+            SearchAtom right = op.getRight();
+            switch (op.type()) {
+                case AND:
+                    query.and();
+                    interpret(query, left);
+                    interpret(query, right);
+                    query.endAnd();
+                    break;
+                case OR:
+                    query.or();
+                    interpret(query, left);
+                    interpret(query, right);
+                    query.endOr();
+                    break;
+                case NOT:
+                    query.not();
+                    interpret(right);
+                    break;
+            }
+        } else {
+            SearchElement el = (SearchElement) atom;
+            switch (el.getLabelText()) {
+                case "Title:":
+                    query.isTitle(el.getText());
+                    break;
+                case "Author's First Name:":
+                    query.isAuthorFirst(el.getText());
+                    break;
+                case "Author's Last Name:":
+                    query.isAuthorLast(el.getText());
+                    break;
+                case "Genre:":
+                    query.isGenre(el.getText());
+                    break;
+                case "Series Name:":
+                    query.isSeries(el.getText());
+                    break;
+                case "Number in Series:":
+                    query.isNumberInSeries(Integer.valueOf(el.getText())); // already encased in try block, no need for more handling here
+                    break;
+                case "Original Publication Date:":
+                    query.isOriginalPublicationDate(Integer.valueOf(el.getText())); // same here
+                    break;
+            }
+        }
+    }
+
+    private BookQuery constructQuery() {
+        if (db == null) {
+            Alert.error("No database connected", "There is no database to query from.");
+            return null;
+        }
+
+        try {
+            BookQuery query = new BookQuery();
+            
+            interpret(query, root);
+            
+            return query;
+        } catch (IllegalStateException e) {
+            Alert.error("Failed to connect to database", "Could not open a session with the database.");
+            return null;
+        } catch (BookQueryException e) {
+            Alert.error("Failed to construct query", "The query could not be constructed properly.");
+            return null;
+        } catch (NumberFormatException e) {
+            Alert.error("Illegal format", "'Number in Series' and 'Original Publication Date' must both be integers.");
+            return null;
+        } catch (Exception e) {
+            Alert.error("Unknown exception occurred", "An unknown exception occurred.");
+            return null;
+        }
     }
 
     public void start(Stage stage) {
@@ -140,7 +220,7 @@ public class Search extends Application {
         stage.setWidth(WIDTH);
         stage.setHeight(HEIGHT);
 
-        Scene scene = new Scene(getPane(new Group()), WIDTH, HEIGHT);
+        Scene scene = new Scene(getPane(), WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
 
