@@ -35,8 +35,20 @@ public class Test {
             Search.main(null);
         });
 
+        Test searchTest = new Test("searchTest", () -> {
+            try (Database db = new Database()) {
+                TestGui.doInGuiThread(() -> {
+                    Search.call(db);
+                });
+                TestGui.main(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
         //tests.add(insertionTest);
-        tests.add(basicSearchCall);
+        //tests.add(basicSearchCall);
+        tests.add(searchTest);
         
         runTests(tests);
     }

@@ -7,8 +7,10 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.Group;
+import javafx.scene.layout.HBox;
+// import javafx.scene.Group;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Button;
 import javafx.scene.Node;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -18,8 +20,9 @@ import javafx.event.ActionEvent;
 import java.awt.Toolkit;
 import java.awt.Dimension;
 import java.util.function.BiConsumer;
-import java.util.Stack;
+import java.util.List;
 import com.fostecar000.backend.Database;
+import com.fostecar000.backend.Book;
 import com.fostecar000.backend.BookQueryException;
 import com.fostecar000.backend.BookQuery;
 
@@ -74,6 +77,9 @@ public class Search extends Application {
             el.addToPane(v, createReplacementFunction(3 + i));
         }
 
+        SearchElement tag = new SearchElement("Tag:");
+        tag.addToPane(v, createReplacementFunction(3 + FIELDS.length));
+
         //SearchOperator blank = new SearchOperator(SearchOperator.Type.BLANK);
         //blank.addToPane(v, createReplacementFunction(3 + FIELDS.length));
 
@@ -125,7 +131,36 @@ public class Search extends Application {
         center.setContent(root);
         center.setPrefSize(WIDTH - initials.getPrefWidth(), HEIGHT);
 
-        pane.setCenter(center);
+        Button searchButton = new Button("Search");
+        searchButton.setOnAction(e -> {
+            BookQuery query = constructQuery();
+            if (query == null) return;
+            List<Book> results;
+            try {
+                results = query.query(false);
+            } catch (BookQueryException err) {
+                Alert.error("Unable to create database query", "Unable to create database query from given conditions.");
+                return;
+            } catch (IllegalStateException err) {
+                Alert.error("Failed to connect to database", "Could not open a session with the database.");
+                return;
+            } catch (Exception err) {
+                Alert.error("Unknown exception occurred", "An unknown exception occurred.");
+                return;
+            }
+            System.out.println(results);
+        });
+
+        searchButton.setStyle("-fx-font-size: 15pt;");
+        HBox buttonBox = new HBox();
+        buttonBox.getChildren().add(searchButton);
+        buttonBox.setAlignment(Pos.BOTTOM_RIGHT);
+
+        VBox centerBox = new VBox();
+        centerBox.getChildren().addAll(center, buttonBox);
+        VBox.setMargin(buttonBox, new Insets(10, 0, 10, 0));
+
+        pane.setCenter(centerBox);
         pane.setRight(initials);
         BorderPane.setMargin(initials, new Insets(0, 20, 0, 20));
         
@@ -156,7 +191,10 @@ public class Search extends Application {
                     break;
                 case NOT:
                     query.not();
-                    interpret(right);
+                    interpret(query, right);
+                    break;
+                case BLANK:
+                    interpret(query, left);
                     break;
             }
         } else {
@@ -182,6 +220,9 @@ public class Search extends Application {
                     break;
                 case "Original Publication Date:":
                     query.isOriginalPublicationDate(Integer.valueOf(el.getText())); // same here
+                    break;
+                case "Tag:":
+                    query.hasTag(el.getText());
                     break;
             }
         }
@@ -237,8 +278,8 @@ public class Search extends Application {
 
     public Search() {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        WIDTH = (int)(screenSize.getWidth() * 0.5);
-        HEIGHT = WIDTH;
+        WIDTH = (int)(screenSize.getWidth() * 0.75);
+        HEIGHT = (int) (screenSize.getHeight() * 0.75);
         root = new SearchOperator(SearchOperator.Type.BLANK);
     }
 
