@@ -46,6 +46,7 @@ public class Search extends Application {
     private BorderPane mainPane, resultsPane;
     private Scene scene;
 
+
     public static String dragboardIdentifier = "f0S";
 
     public static void call(Database database) {
@@ -146,9 +147,8 @@ public class Search extends Application {
             List<Book> results;
             try {
                 results = query.query(false);
-                BorderPane tmp = new BorderPane();
-                tmp.setCenter(new Button("test"));
-                scene.setRoot(tmp);
+                resultsPane = getResultsPane(results);
+                scene.setRoot(resultsPane);
             } catch (BookQueryException err) {
                 Alert.error("Unable to create database query", "Unable to create database query from given conditions.");
                 return;
@@ -198,17 +198,24 @@ public class Search extends Application {
         ScrollPane scroll = new ScrollPane();
         ListView<VBox> listView = new ListView<>(FXCollections.observableArrayList(elements));
         scroll.setContent(listView);
-        AnchorPane anchor = new AnchorPane();
-        anchor.getChildren().add(scroll);
-        AnchorPane.setBottomAnchor(scroll, 0.0);
-        AnchorPane.setTopAnchor(scroll, 0.0);
-        AnchorPane.setLeftAnchor(scroll, 0.0);
-        AnchorPane.setRightAnchor(scroll, 0.0);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
         
         Button back = new Button("Back");
         Button view = new Button("View");
         back.setStyle("-fx-font-size: 15pt;");
         view.setStyle("-fx-font-size: 15pt;");
+
+        view.setOnAction(e -> {
+            int i = listView.getSelectionModel().getSelectedIndex();
+            if (i == -1) return;
+            Book bookToView = results.get(i);
+            scene.setRoot(View.getViewPane(bookToView, null));
+        });
+
+        back.setOnAction(e -> {
+            scene.setRoot(mainPane);
+        });
         
         VBox buttonBox = new VBox();
         buttonBox.getChildren().addAll(view, back);
@@ -216,7 +223,7 @@ public class Search extends Application {
         buttonBox.setAlignment(Pos.BOTTOM_CENTER);
 
         resultsPane = new BorderPane();
-        resultsPane.setCenter(anchor);
+        resultsPane.setCenter(scroll);
         resultsPane.setRight(buttonBox);
         BorderPane.setMargin(buttonBox, new Insets(0, 10, 10, 10));
 
@@ -314,18 +321,12 @@ public class Search extends Application {
         stage.setWidth(WIDTH);
         stage.setHeight(HEIGHT);
 
-        ArrayList<Book> list = new ArrayList<>();
-        list.add(new Book("Dune", "Frank", "Herbert", "scifi", "Dune", 1, 1965));
+        //ArrayList<Book> list = new ArrayList<>();
+        //list.add(new Book("Dune", "Frank", "Herbert", "scifi", "Dune", 1, 1965));
 
-        scene = new Scene(getResultsPane(list), WIDTH, HEIGHT);
+        scene = new Scene(getMainPane(), WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
-
-        /*try {
-            Thread.sleep(50);
-        } catch (Exception e) {
-        }
-        and.setRight(authorFirst);*/
     }
 
     public void setDatabase(Database db) {

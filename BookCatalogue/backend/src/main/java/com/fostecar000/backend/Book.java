@@ -3,6 +3,8 @@ package com.fostecar000.backend;
 import javax.persistence.*;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Table( name = "books" )
@@ -146,5 +148,11 @@ public class Book {
 		boolean contained = tags.contains(t);
 		tags.remove(t); // does nothing if tag isn't in set
 		if (contained) t.setBook(null); // if a tag that wasn't in the tags set is passed, don't null the book
+	}
+
+	public List<String> getTagNames() {
+		return tags.stream()
+				.map(t -> t.getTag())
+				.collect(Collectors.toList());
 	}
 }
