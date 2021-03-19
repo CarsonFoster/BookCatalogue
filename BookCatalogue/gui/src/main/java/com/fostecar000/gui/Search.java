@@ -6,21 +6,26 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 // import javafx.scene.Group;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.Node;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.event.ActionEvent;
+import javafx.collections.FXCollections;
 import java.awt.Toolkit;
 import java.awt.Dimension;
 import java.util.function.BiConsumer;
 import java.util.List;
+import java.util.ArrayList;
 import com.fostecar000.backend.Database;
 import com.fostecar000.backend.Book;
 import com.fostecar000.backend.BookQueryException;
@@ -38,6 +43,9 @@ public class Search extends Application {
     private static int HEIGHT;
     private Database db;
     private SearchOperator root;
+    private BorderPane mainPane, resultsPane;
+    private Scene scene;
+
     public static String dragboardIdentifier = "f0S";
 
     public static void call(Database database) {
@@ -121,10 +129,10 @@ public class Search extends Application {
         return v;
     }
 
-    private BorderPane getPane() { //Group drawingGroup) {
+    private BorderPane getMainPane() { //Group drawingGroup) {
         // StackPane base = new StackPane();
-        
-        BorderPane pane = new BorderPane();
+        if (mainPane != null) return mainPane;
+        mainPane = new BorderPane();
         VBox initials = getInitialSearchNodes(); // drawingGroup);
 
         ScrollPane center = new ScrollPane();
@@ -138,6 +146,9 @@ public class Search extends Application {
             List<Book> results;
             try {
                 results = query.query(false);
+                BorderPane tmp = new BorderPane();
+                tmp.setCenter(new Button("test"));
+                scene.setRoot(tmp);
             } catch (BookQueryException err) {
                 Alert.error("Unable to create database query", "Unable to create database query from given conditions.");
                 return;
@@ -146,9 +157,9 @@ public class Search extends Application {
                 return;
             } catch (Exception err) {
                 Alert.error("Unknown exception occurred", "An unknown exception occurred.");
+                err.printStackTrace();
                 return;
             }
-            System.out.println(results);
         });
 
         searchButton.setStyle("-fx-font-size: 15pt;");
@@ -160,14 +171,56 @@ public class Search extends Application {
         centerBox.getChildren().addAll(center, buttonBox);
         VBox.setMargin(buttonBox, new Insets(10, 0, 10, 0));
 
-        pane.setCenter(centerBox);
-        pane.setRight(initials);
+        mainPane.setCenter(centerBox);
+        mainPane.setRight(initials);
         BorderPane.setMargin(initials, new Insets(0, 20, 0, 20));
         
         // base.getChildren().add(pane);
         // base.getChildren().add(drawingGroup);
         
-        return pane; // base;
+        return mainPane; // base;
+    }
+
+    private BorderPane getResultsPane(List<Book> results) {
+        // must always construct a new one, in case the results argument was different
+        List<VBox> elements = new ArrayList<>();
+        for (Book b : results) {
+            Label title = new Label(b.getTitle());
+            title.setStyle("-fx-font-size: 15pt;");
+            Label author = new Label(b.getAuthorFirst() + " " + b.getAuthorLast());
+            
+            VBox box = new VBox();
+            box.getChildren().addAll(title, author);
+            box.setSpacing(10);
+            elements.add(box);
+        }
+        
+        ScrollPane scroll = new ScrollPane();
+        ListView<VBox> listView = new ListView<>(FXCollections.observableArrayList(elements));
+        scroll.setContent(listView);
+        AnchorPane anchor = new AnchorPane();
+        anchor.getChildren().add(scroll);
+        AnchorPane.setBottomAnchor(scroll, 0.0);
+        AnchorPane.setTopAnchor(scroll, 0.0);
+        AnchorPane.setLeftAnchor(scroll, 0.0);
+        AnchorPane.setRightAnchor(scroll, 0.0);
+        
+        Button back = new Button("Back");
+        Button view = new Button("View");
+        back.setStyle("-fx-font-size: 15pt;");
+        view.setStyle("-fx-font-size: 15pt;");
+        
+        VBox buttonBox = new VBox();
+        buttonBox.getChildren().addAll(view, back);
+        buttonBox.setSpacing(10);
+        buttonBox.setAlignment(Pos.BOTTOM_CENTER);
+
+        resultsPane = new BorderPane();
+        resultsPane.setCenter(anchor);
+        resultsPane.setRight(buttonBox);
+        BorderPane.setMargin(buttonBox, new Insets(0, 10, 10, 10));
+
+        return resultsPane;
     }
 
     private void interpret(BookQuery query, SearchAtom atom) throws NumberFormatException, BookQueryException {
@@ -261,7 +314,10 @@ public class Search extends Application {
         stage.setWidth(WIDTH);
         stage.setHeight(HEIGHT);
 
-        Scene scene = new Scene(getPane(), WIDTH, HEIGHT);
+        ArrayList<Book> list = new ArrayList<>();
+        list.add(new Book("Dune", "Frank", "Herbert", "scifi", "Dune", 1, 1965));
+
+        scene = new Scene(getResultsPane(list), WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
 
