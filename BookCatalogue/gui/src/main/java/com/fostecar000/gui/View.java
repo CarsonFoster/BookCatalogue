@@ -1,5 +1,6 @@
 package com.fostecar000.gui;
 
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
@@ -12,10 +13,25 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ListView;
 import javafx.collections.FXCollections;
+import java.util.function.Consumer;
 import com.fostecar000.backend.Book;
+import com.fostecar000.backend.Database;
 
-public abstract class View {
-    public static BorderPane getViewPane(Book b, Runnable backFunction) {
+public class View {
+    
+    private Book b;
+    private Consumer<Pane> setPaneFunction;
+    private Pane previous;
+    private Database db;
+
+    public View(Book b, Consumer<Pane> setPaneFunction, Pane previous, Database db) {
+        this.b = b;
+        this.setPaneFunction = setPaneFunction;
+        this.previous = previous;
+        this.db = db;
+    }
+
+    public BorderPane getPane() {
         BorderPane pane = new BorderPane();
 
         VBox text = new VBox();
@@ -50,6 +66,15 @@ public abstract class View {
         delete.setStyle("-fx-font-size: 15pt;");
         update.setStyle("-fx-font-size: 15pt;");
         back.setStyle("-fx-font-size: 15pt;");
+
+        update.setOnAction(e -> {
+            Update u = new Update(b);
+            setPaneFunction.accept(u.getPane());
+        });
+
+        back.setOnAction(e -> {
+            setPaneFunction.accept(previous);
+        });
 
         HBox backBox = new HBox();
         backBox.getChildren().add(back);

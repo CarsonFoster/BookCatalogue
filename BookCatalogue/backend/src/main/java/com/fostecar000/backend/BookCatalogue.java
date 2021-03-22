@@ -51,4 +51,12 @@ public abstract class BookCatalogue {
         });
     }
 
+    public static void removeTags(Book b, Iterable<String> tagsToRemove) {
+        for (String tag : tagsToRemove)
+            b.removeTag(new Tag(tag)); // this works because Tag.hashCode() is its string's hashcode, and the equals method only checks the strings
+
+        HibernateUtils.sessionWrapper("remove tags from book '" + b.getTitle() + "'", s -> {
+            s.update(b);
+        });
+    }
 }
