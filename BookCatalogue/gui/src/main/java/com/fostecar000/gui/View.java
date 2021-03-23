@@ -68,7 +68,7 @@ public class View {
         back.setStyle("-fx-font-size: 15pt;");
 
         update.setOnAction(e -> {
-            Update u = new Update(b);
+            Update u = new Update(b, setPaneFunction, pane);
             setPaneFunction.accept(u.getPane());
         });
 

@@ -1,5 +1,6 @@
 package com.fostecar000.gui;
 
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -19,6 +20,9 @@ import javafx.scene.input.KeyCode;
 import javafx.collections.ObservableList;
 import javafx.collections.FXCollections;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.function.Consumer;
 import com.fostecar000.backend.Database;
 import com.fostecar000.backend.Book;
 import com.fostecar000.backend.BookCatalogue;
@@ -34,6 +38,9 @@ public class Update {
     private ObservableList<String> tags;
     private TextField tagField;
     private Label successMessage;
+    private Set<String> previousTags, tagsToAdd, previousTagsToRemove;
+    private Consumer<Pane> setPaneFunction;
+    private Pane previous;
 
     private void addField(String fieldName, String defaultValue, HashMap<String, TextField> fieldMap, GridPane grid, int y) {
         Label label = new Label(fieldName + ": ");
@@ -76,12 +83,15 @@ public class Update {
 
         ScrollPane scroll = new ScrollPane();
         scroll.setContent(list);
+        scroll.setFitToHeight(true);
+        scroll.setFitToWidth(true);
 
         HBox controls = new HBox();
         Label tagLabel = new Label("Add Tag:");
         tagField = new TextField();
         Button add = new Button("Add");
-        controls.getChildren().addAll(tagLabel, tagField, add);
+        Button remove = new Button("Remove Selected");
+        controls.getChildren().addAll(tagLabel, tagField, add, remove);
         controls.setSpacing(10);
         controls.setAlignment(Pos.CENTER);
 
@@ -89,10 +99,36 @@ public class Update {
         tagContainer.setAlignment(Pos.CENTER);
         tagContainer.setVgrow(scroll, Priority.NEVER);
 
+        tagsToAdd = new HashSet<>();
+        previousTagsToRemove = new HashSet<>();
+        previousTags = b.getTagNames();
+
         Runnable addTag = () -> {
-            tags.add(tagField.getText());
-            tagField.clear();
+            String t = tagField.getText();
+            if (!previousTags.contains(t)) {
+                if (tagsToAdd.add(t)) {
+                    tags.add(t);
+                    tagField.clear();
+                }
+            } else if (previousTagsToRemove.contains(t)) {
+                previousTagsToRemove.remove(t);
+                tags.add(t);
+                tagField.clear();
+            }
         };
+
+        remove.setOnAction(e -> {
+            int i = list.getSelectionModel().getSelectedIndex();
+            if (i == -1) return;
+            String t = list.getItems().get(i);
+            if (previousTags.contains(t)) {
+                previousTagsToRemove.add(t);
+                tags.remove(t);
+            } else if (tagsToAdd.contains(t)) {
+                tagsToAdd.remove(t);
+                tags.remove(t);
+            }
+        });
 
         add.setOnAction(e -> {
             addTag.run();
@@ -121,6 +157,8 @@ public class Update {
         successMessage = new Label();
 
         update.setOnAction(e -> {
+            System.out.println(tagsToAdd);
+            System.out.println(previousTagsToRemove);
             if (db == null) {
                 Alert.error("Cannot connect to database", "Could not connect with the database.");
                 return;
@@ -163,20 +201,18 @@ public class Update {
         this.db = db;
     }
 
-    public Update() {
-
+    public Update(Consumer<Pane> setPaneFunction, Pane previous) {
+        this.setPaneFunction = setPaneFunction;
+        this.previous = previous;
     }
 
-    public Update(Book b) {
+    public Update(Book b, Consumer<Pane> setPaneFunction, Pane previous) {
+        this(setPaneFunction, previous);
         this.b = b;
     }
 
-    public Update(Database db) {
-        this();
-        this.db = db;
-    }
-
-    public Update(Book b, Database db) {
+    public Update(Book b, Database db, Consumer<Pane> setPaneFunction, Pane previous) {
+        this(setPaneFunction, previous);
         this.b = b;
         this.db = db;
     }
