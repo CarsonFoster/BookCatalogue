@@ -154,11 +154,22 @@ public class Update {
         update.setPrefHeight(50);
         update.setPrefWidth(update.getPrefHeight() * 2);
 
+        Button back = new Button("Back");
+        back.setStyle("-fx-font-size: 15pt;");
+        
+        HBox backBox = new HBox();
+        backBox.getChildren().add(back);
+        backBox.setAlignment(Pos.CENTER_LEFT);
+
+        HBox updateBox = new HBox();
+        updateBox.getChildren().add(update);
+        updateBox.setAlignment(Pos.CENTER_RIGHT);
+
         successMessage = new Label();
 
+        back.setOnAction(e -> setPaneFunction.accept(previous));
+
         update.setOnAction(e -> {
-            System.out.println(tagsToAdd);
-            System.out.println(previousTagsToRemove);
             if (db == null) {
                 Alert.error("Cannot connect to database", "Could not connect with the database.");
                 return;
@@ -177,7 +188,20 @@ public class Update {
                 return;
             }
             // update book object
-            Alert.info("update book", ":)");
+            // I didn't want to set watchers on each of the text fields, so I'm just assuming that the names, title, etc. are short enough that this is OK
+            // I don't want to update a record with information that is already there
+            String authorFirst = textFields.get("Author's First Name");
+            String authorLast = textFields.get("Author's Last Name");
+            String title = textFields.get("Title");
+            String genre = textFields.get("Genre");
+            String series = textFields.get("Series Name");
+            if (b.getAuthorFirst() == null || !b.getAuthorFirst().equals(authorFirst)) b.setAuthorFirst(authorFirst);
+            if (b.getAuthorLast() == null || !b.getAuthorLast().equals(authorLast)) b.setAuthorLast(authorLast);
+            if (b.getTitle() == null || !b.getTitle().equals(title)) b.setTitle(title);
+            if (b.getGenre() == null || !b.getGenre().equals(genre)) b.setGenre(genre);
+            if (b.getSeries() == null || !b.getSeries().equals(series)) b.setSeries(series);
+            if (b.getNumberInSeries() != number) b.setNumberInSeries(number);
+            if (b.getOriginalPublicationDate() != publicationDate) b.setOriginalPublicationDate(publicationDate);
             try {
                 // send to database
             } catch (Exception ex) {
@@ -187,8 +211,9 @@ public class Update {
         });
 
         HBox bottom = new HBox(20);
-        bottom.getChildren().addAll(successMessage, update);
-        bottom.setAlignment(Pos.CENTER_RIGHT);
+        bottom.getChildren().addAll(backBox, successMessage, updateBox);
+        HBox.setHgrow(backBox, Priority.ALWAYS);
+        HBox.setHgrow(updateBox, Priority.ALWAYS);
 
         pane.setCenter(center);
         pane.setBottom(bottom);
