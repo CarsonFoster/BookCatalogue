@@ -203,11 +203,13 @@ public class Search extends Application {
         
         Button back = new Button("Back");
         Button view = new Button("View");
+        Button update = new Button("Update");
         back.setStyle("-fx-font-size: 15pt;");
         view.setStyle("-fx-font-size: 15pt;");
+        update.setStyle("-fx-font-size: 15pt;");
         
         VBox buttonBox = new VBox();
-        buttonBox.getChildren().addAll(view, back);
+        buttonBox.getChildren().addAll(view, update, back);
         buttonBox.setSpacing(10);
         buttonBox.setAlignment(Pos.BOTTOM_CENTER);
 
@@ -220,8 +222,16 @@ public class Search extends Application {
             int i = listView.getSelectionModel().getSelectedIndex();
             if (i == -1) return;
             Book bookToView = results.get(i);
-            View v = new View(bookToView, p -> scene.setRoot(p), resultsPane, null);
+            View v = new View(bookToView, p -> scene.setRoot(p), resultsPane, db);
             scene.setRoot(v.getPane());
+        });
+
+        update.setOnAction(e -> {
+            int i = listView.getSelectionModel().getSelectedIndex();
+            if (i == -1) return;
+            Book bookToView = results.get(i);
+            Update u = new Update(bookToView, db, p -> scene.setRoot(p), resultsPane);
+            scene.setRoot(u.getPane());
         });
 
         back.setOnAction(e -> {

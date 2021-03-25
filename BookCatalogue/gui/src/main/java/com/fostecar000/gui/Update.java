@@ -190,11 +190,11 @@ public class Update {
             // update book object
             // I didn't want to set watchers on each of the text fields, so I'm just assuming that the names, title, etc. are short enough that this is OK
             // I don't want to update a record with information that is already there
-            String authorFirst = textFields.get("Author's First Name");
-            String authorLast = textFields.get("Author's Last Name");
-            String title = textFields.get("Title");
-            String genre = textFields.get("Genre");
-            String series = textFields.get("Series Name");
+            String authorFirst = textFields.get("Author's First Name").getText();
+            String authorLast = textFields.get("Author's Last Name").getText();
+            String title = textFields.get("Title").getText();
+            String genre = textFields.get("Genre").getText();
+            String series = textFields.get("Series Name").getText();
             if (b.getAuthorFirst() == null || !b.getAuthorFirst().equals(authorFirst)) b.setAuthorFirst(authorFirst);
             if (b.getAuthorLast() == null || !b.getAuthorLast().equals(authorLast)) b.setAuthorLast(authorLast);
             if (b.getTitle() == null || !b.getTitle().equals(title)) b.setTitle(title);
@@ -204,6 +204,8 @@ public class Update {
             if (b.getOriginalPublicationDate() != publicationDate) b.setOriginalPublicationDate(publicationDate);
             try {
                 // send to database
+                BookCatalogue.removeTags(b, previousTagsToRemove);
+                BookCatalogue.updateBook(b, tagsToAdd);
             } catch (Exception ex) {
                 Alert.error("Could not insert book into database", ex);
             }
