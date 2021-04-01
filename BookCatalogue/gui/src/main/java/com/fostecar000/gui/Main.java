@@ -18,9 +18,9 @@ public class Main extends Application {
 
     private static int WIDTH;
     private static int HEIGHT;
-    private Database db;
+    private static final Database db = getDatabaseHandle();
 
-    VBox createPane() {
+    private VBox createPane() {
         VBox box = new VBox();
         box.setSpacing(20);
         box.setAlignment(Pos.CENTER);
@@ -34,12 +34,28 @@ public class Main extends Application {
             b.setStyle("-fx-font-size: 15pt;");
             b.setMaxWidth(Double.MAX_VALUE);
         }
+
+        insert.setOnAction(e -> {
+            Insertion.call(db);
+        });
+
+        search.setOnAction(e -> {
+            Search.call(db);
+        });
+
+        help.setOnAction(e -> {
+            showHelp();
+        });
         
         box.getChildren().addAll(insert, search, help);
         VBox tmp = new VBox();
         tmp.setAlignment(Pos.CENTER);
         tmp.getChildren().add(box);
         return tmp;
+    }
+
+    public void showHelp() {
+        Alert.info("Helpful Information for BookCatalogue", "");
     }
 
     public void start(Stage stage) {
@@ -59,7 +75,21 @@ public class Main extends Application {
         HEIGHT = WIDTH;
     }
 
+    private static Database getDatabaseHandle() {
+        try {
+            return new Database();
+        } catch (Exception e) {
+            Alert.error("Failed to connect to database; check database.properties", e);
+            return null;
+        }
+    }
+
     public static void main(String[] args) {
-        launch(args);
+        if (db == null) return;
+        try (db) {
+            launch(args);
+        } catch (Exception e) {
+            Alert.error("Exception in program", e);
+        }
     }
 }
