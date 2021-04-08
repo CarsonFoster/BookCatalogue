@@ -39,6 +39,12 @@
     </dependency>
 
     <dependency>
+        <groupId>org.nd4j</groupId>
+        <artifactId>nd4j-ntive-platform</artifactId>
+        <version>${dl4j.version}</version>
+    </dependency>
+
+    <dependency>
         <groupId>org.datavec</groupId>
         <artifactId>datavec-api</artifactId>
         <version>${dl4j.version}</version>
@@ -112,12 +118,35 @@
                     <version>${dl4j.version}</version>
                     <type>jar</type>
                     <overWrite>false</overWrite>
-                    <outputDirectory>${settings.localRepository}\org\nd4j\nd4j-native-platform\${dl4j.version}\</outputDirectory>
+                    <outputDirectory>${project.build.directory}/dependency/</outputDirectory>
                     <destFileName>nd4j-ntive-platform-${dl4j.version}.jar</destFileName>
                   </artifactItem>
                 </artifactItems>
               </configuration>
             </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.5.1</version>
+          <configuration>
+              <groupId>org.nd4j</groupId>
+              <artifactId>nd4j-ntive-platform</artifactId>
+              <version>${dl4j.version}</version>
+              <packaging>jar</packaging>
+              <file>${project.build.directory}/dependency/nd4j-ntive-platform-${dl4j.version}.jar</file>
+              <generatePom>false</generatePom>
+          </configuration>
+          <executions>
+              <execution>
+                <id>install-jar-lib</id>
+                <goals>
+                    <goal>install-file</goal>
+                </goals>
+                <phase>initialize</phase>
+              </execution>
           </executions>
         </plugin>
     </plugins>

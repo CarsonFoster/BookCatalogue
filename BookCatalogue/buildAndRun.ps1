@@ -33,7 +33,6 @@ $cpGenreFixedArray += "genre\target"
 $finalArray = $cpFixedArray + $cpGuiFixedArray + $cpGenreFixedArray
 
 $modulePath = ($finalArray -join ';')
-Write-Host $modulePath
 #& 'C:\Program Files\Java\jdk-9.0.4\bin\java' -p "$modulePath" -cp "$cp" -m backend/com.fostecar000.backend.Test
 #& 'C:\Program Files\Java\jdk-11.0.10\bin\java' -p "$modulePath" -cp "$cp" -m backend/com.fostecar000.backend.Test -ea
 #& 'C:\Program Files\Java\jdk-11.0.10\bin\java' -p "$modulePath" -cp "$cp" -m gui/com.fostecar000.gui.Test -ea
