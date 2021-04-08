@@ -23,6 +23,8 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <dl4j.version>1.0.0-beta7</dl4j.version>
+    <logback.version>1.2.3</logback.version>
+    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
   </properties>
 
   <dependencies>
@@ -39,15 +41,15 @@
     </dependency>
 
     <dependency>
-        <groupId>org.nd4j</groupId>
-        <artifactId>nd4j-ntive-platform</artifactId>
+        <groupId>org.datavec</groupId>
+        <artifactId>datavec-api</artifactId>
         <version>${dl4j.version}</version>
     </dependency>
 
     <dependency>
-        <groupId>org.datavec</groupId>
-        <artifactId>datavec-api</artifactId>
-        <version>${dl4j.version}</version>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
     </dependency>
 
   </dependencies>
@@ -100,55 +102,45 @@
 
     <plugins>
       <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.1.2</version>
-          <executions>
-            <execution>
-              <id>copy</id>
-              <phase>initialize</phase>
-              <goals>
-                <goal>copy</goal>
-              </goals>
-              <configuration>
-                <artifactItems>
-                  <artifactItem>
-                    <groupId>org.nd4j</groupId>
-                    <artifactId>nd4j-native-platform</artifactId>
-                    <version>${dl4j.version}</version>
-                    <type>jar</type>
-                    <overWrite>false</overWrite>
-                    <outputDirectory>${project.build.directory}/dependency/</outputDirectory>
-                    <destFileName>nd4j-ntive-platform-${dl4j.version}.jar</destFileName>
-                  </artifactItem>
-                </artifactItems>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <configuration>
+            <shadedArtifactAttached>true</shadedArtifactAttached>
+            <shadedClassifierName>bin</shadedClassifierName>
+            <createDependencyReducedPom>true</createDependencyReducedPom>
+            <filters>
+                <filter>
+                    <artifact>*:*</artifact>
+                    <excludes>
+                        <exclude>org/datanucleus/**</exclude>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                    </excludes>
+                </filter>
+            </filters>
+        </configuration>
 
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-install-plugin</artifactId>
-          <version>2.5.1</version>
-          <configuration>
-              <groupId>org.nd4j</groupId>
-              <artifactId>nd4j-ntive-platform</artifactId>
-              <version>${dl4j.version}</version>
-              <packaging>jar</packaging>
-              <file>${project.build.directory}/dependency/nd4j-ntive-platform-${dl4j.version}.jar</file>
-              <generatePom>false</generatePom>
-          </configuration>
-          <executions>
-              <execution>
-                <id>install-jar-lib</id>
+        <executions>
+            <execution>
+                <phase>package</phase>
                 <goals>
-                    <goal>install-file</goal>
+                    <goal>shade</goal>
                 </goals>
-                <phase>initialize</phase>
-              </execution>
-          </executions>
-        </plugin>
+                <configuration>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                            <resource>reference.conf</resource>
+                        </transformer>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        </transformer>
+                    </transformers>
+                </configuration>
+            </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
