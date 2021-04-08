@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Arrays;
 import java.io.*;
+
+import com.robrua.nlp.bert.*;
 
 public class Test {
     private String label;
@@ -18,7 +21,25 @@ public class Test {
 
     private static void genreTests() {
         ArrayList<Test> tests = new ArrayList<>();
-        
+
+        Test testDL4J = new Test("testDL4J", () -> {
+            try {
+                TestDL4J.main(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        Test testBert = new Test("testBert", () -> {
+            try (Bert bert = Bert.load("com/robrua/nlp/easy-bert/bert-cased-L-12-H-768-A-12")) {
+                float[] embedding = bert.embedSequence("A sequence");
+                System.out.println(Arrays.toString(embedding));
+            }
+        });
+
+        //tests.add(testDL4J)
+        tests.add(testBert);
+
         runTests(tests);
     }
 
