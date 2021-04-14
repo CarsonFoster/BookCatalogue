@@ -37,8 +37,17 @@ public class Test {
             }
         });
 
+        Test runGenreIdentifier = new Test("runGenreIdentifier", () -> {
+            try {
+                GenreIdentifier.main(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
         //tests.add(testDL4J)
-        tests.add(testBert);
+        //tests.add(testBert);
+        tests.add(runGenreIdentifier);
 
         runTests(tests);
     }
