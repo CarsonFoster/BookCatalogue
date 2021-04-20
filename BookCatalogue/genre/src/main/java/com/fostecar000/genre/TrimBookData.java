@@ -52,18 +52,65 @@ public class TrimBookData {
         return genres;
     }
     
+    private static HashSet<String> createGenreHashSet() {
+        HashSet<String> genres = new HashSet<>();
+        genres.add("Nonfiction");
+        genres.add("Fiction");
+        genres.add("Children’s Books");
+        genres.add("Mystery & Suspense");
+        genres.add("Religion & Philosophy");
+        genres.add("Romance");
+        genres.add("Biography & Memoir");
+        genres.add("Suspense & Thriller");
+        genres.add("Graphic Novels & Manga");
+        genres.add("Historical Fiction");
+        genres.add("Classics");
+        genres.add("Teen & Young Adult");
+        genres.add("Personal Growth");
+        genres.add("Arts & Entertainment");
+        genres.add("Health & Fitness");
+        genres.add("Cooking");
+        genres.add("Fantasy");
+        genres.add("History");
+        genres.add("Politics");
+        genres.add("Reference");
+        genres.add("Science");
+        genres.add("Science Fiction");
+        genres.add("Art");
+        genres.add("Humor");
+        genres.add("Paranormal Fiction");
+        genres.add("Crafts, Home & Garden");
+        genres.add("Diet & Nutrition");
+        genres.add("Parenting");
+        genres.add("Poetry");
+        genres.add("Sports");
+        genres.add("Crafts & Hobbies");
+        genres.add("Travel");
+        genres.add("Business");
+        genres.add("Technology");
+        genres.add("Gothic & Horror");
+        genres.add("Photography");
+        genres.add("Music");
+        genres.add("Games");
+        genres.add("Language");
+        genres.add("Film");
+        genres.add("Design");
+        genres.add("Economics");
+        return genres;
+    }
+    
     public static void main(String[] args) throws IOException {
         final String pathIn = "C:\\users\\cwf\\documents\\bookcatalogue\\blurbgenrecollectionen\\blurbgenrecollection_en_";
         final String pathOut = "C:\\users\\cwf\\documents\\bookcatalogue\\git\\bookcatalogue\\ai_data\\";
         String[][] files = new String[][] {new String[] {"train.txt", "train.txt"},
                                            new String[] {"test.txt", "test.txt"},
                                            new String[] {"dev.txt", "validation.txt"}};
-        HashMap<String, Integer> genres = createGenreHashMap();
+        HashSet<String> genres = createGenreHashSet();
         for (String[] pair : files)
             trimBookData(pathIn + pair[0], pathOut + pair[1], genres);
     }
     
-    private static void trimBookData(String fileIn, String fileOut, HashMap<String, Integer> genres) throws IOException {
+    private static void trimBookData(String fileIn, String fileOut, HashSet<String> genres) throws IOException {
         System.out.println("Trimming file " + fileIn + " ...");
         Scanner fin = new Scanner(new File(fileIn));
         StringBuilder lineToOutput = new StringBuilder();
@@ -79,7 +126,7 @@ public class TrimBookData {
                 String topics = fin.nextLine().trim();
                 boolean record = false;
                 StringBuilder topicToChoose = new StringBuilder();
-                int topicToWrite = 0;
+                String topicToWrite = "Fiction";
                 
                 for (int i = 0; i < topics.length(); i++) {
                     char c = topics.charAt(i);
@@ -89,7 +136,7 @@ public class TrimBookData {
                         record = false;
                     } else if (c == '/') {
                         String topicStr = topicToChoose.toString();
-                        if (genres.containsKey(topicStr)) topicToWrite = genres.get(topicStr);
+                        if (genres.contains(topicStr)) topicToWrite = topicStr;
                         topicToChoose = new StringBuilder();
                     } else if (record) {
                         topicToChoose.append(c);
