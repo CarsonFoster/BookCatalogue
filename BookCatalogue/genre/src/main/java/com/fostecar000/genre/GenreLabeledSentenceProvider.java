@@ -79,6 +79,9 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     public Pair<String, String> nextSentence() {
         String line = fin.nextLine().trim();
         int indexOfDelimiter = line.indexOf("####");
+        if (indexOfDelimiter == -1) {
+            System.out.println(line);
+        }
         String text = line.substring(0, indexOfDelimiter);
         String label = line.substring(indexOfDelimiter + 4);
         return Pair.create(text, label);

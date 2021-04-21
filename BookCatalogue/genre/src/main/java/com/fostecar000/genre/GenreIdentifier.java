@@ -13,6 +13,24 @@ import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.nd4j.linalg.factory.Nd4j;
 
+import org.deeplearning4j.nn.graph.ComputationGraph;
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.ConvolutionMode;
+import org.deeplearning4j.nn.conf.inputs.InputType;
+import org.deeplearning4j.nn.conf.graph.MergeVertex;
+import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
+import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
+import org.deeplearning4j.nn.conf.layers.PoolingType;
+import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.optimize.listeners.EvaluativeListener;
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.deeplearning4j.optimize.api.InvocationType;
+import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.nd4j.linalg.learning.config.Adam;
+
 import java.util.List;
 import java.io.File;
 import java.io.IOException;
@@ -36,20 +54,76 @@ public class GenreIdentifier {
 
         int batchSize = 1000;
         int labelIndex = 1; // index 0 = blurb, index 1 = genre label
-        int numClasses = 42; // I'm using 42 different genre identifiers
 
         DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numClasses);*/
         
         int batchSize = 32;
         int vectorSize = 100;
         int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
+        int numClasses = 42; // I'm using 42 different genre identifiers
+        int featureMaps = 100;
+        int epochs = 1;
 
         Nd4j.getMemoryManager().setAutoGcWindow(10000);
         // Nd4j.getEnvironment().allowHelpers(false); // uncommenting allows you to read one word2vec txt file, otherwise, can only read binary files in a timely manner
 
+        System.out.println("[*] Loading data...");
         Word2Vec wordVectors = WordVectorSerializer.readWord2VecModel(new File(vectorPath));
 
         DataSetIterator trainIter = getDataSetIterator(trainingData, wordVectors, batchSize, truncateBlurbsToLength);
+        DataSetIterator validationIter = getDataSetIterator(validatingData, wordVectors, batchSize, truncateBlurbsToLength);
+        System.out.println("[+] Done loading data.");
+
+        // Full Disclosure: I am only passingly familiar with AI, this turned out to be more complicated than I thought it would be,
+        //                  and I didn't have enough time to learn everything, so this is using other people's work
+        // this configuration is based on Kim (2014) and the dl4j example below
+        // https://github.com/eclipse/deeplearning4j-examples/blob/master/dl4j-examples/src/main/java/org/deeplearning4j/examples/advanced/modelling/textclassification/pretrainedword2vec/ImdbReviewClassificationCNN.java
+        ComputationGraphConfiguration conf = new NeuralNetConfiguration.Builder()
+                .weightInit(WeightInit.RELU)
+                .activation(Activation.LEAKYRELU)
+                .updater(new Adam(0.01))
+                .convolutionMode(ConvolutionMode.Same)
+                .l2(0.0001)
+                .graphBuilder()
+                .addInputs("inputLayer")
+                .setInputTypes(InputType.convolutional(truncateBlurbsToLength, vectorSize, 1))
+                .addLayer("cnn_h=3", new ConvolutionLayer.Builder()
+                    .kernelSize(3, vectorSize)
+                    .stride(1, vectorSize)
+                    .nOut(featureMaps)
+                    .build(), "inputLayer")
+                .addLayer("cnn_h=4", new ConvolutionLayer.Builder()
+                    .kernelSize(4, vectorSize)
+                    .stride(1, vectorSize)
+                    .nOut(featureMaps)
+                    .build(), "inputLayer")
+                .addLayer("cnn_h=5", new ConvolutionLayer.Builder()
+                    .kernelSize(5, vectorSize)
+                    .stride(1, vectorSize)
+                    .nOut(featureMaps)
+                    .build(), "inputLayer")
+                .addVertex("mergeVertex", new MergeVertex(), "cnn_h=3", "cnn_h=4", "cnn_h=5")
+                .addLayer("maxOverTimePooling", new GlobalPoolingLayer.Builder()
+                    .poolingType(PoolingType.MAX)
+                    .dropOut(0.5)
+                    .build(), "mergeVertex")
+                .addLayer("outputLayer", new OutputLayer.Builder()
+                    .lossFunction(LossFunctions.LossFunction.MCXENT)
+                    .activation(Activation.SOFTMAX)
+                    .nOut(numClasses)
+                    .build(), "maxOverTimePooling")
+                .setOutputs("outputLayer")
+                .build();
+        
+        ComputationGraph neuralNet = new ComputationGraph(conf);
+        neuralNet.init();
+
+        System.out.println("[*] Starting training...");
+        // print loss function value every 100 iterations and evaluate model at the end of each epoch
+        neuralNet.setListeners(new ScoreIterationListener(100), new EvaluativeListener(validationIter, 1, InvocationType.EPOCH_END));
+        neuralNet.fit(trainIter, epochs);
+
+        System.out.println("[+] Finished.");
 
     }
 
