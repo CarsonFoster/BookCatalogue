@@ -10,13 +10,13 @@ import java.io.IOException;
 
 public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     private static List<String> labels;
-    private static final int numClasses = 42;
+    public static final int NUM_CLASSES = 42;
     private Scanner fin;
     private String filePath;
 
     public GenreLabeledSentenceProvider(String filePath) throws IOException {
         this.filePath = filePath;
-        fin = new Scanner(new File(filePath));
+        fin = new Scanner(new File(filePath), "UTF-8");
     }
 
     private static void createLabels() {
@@ -24,7 +24,7 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
             labels = new ArrayList<String>();
             labels.add("Nonfiction");
             labels.add("Fiction");
-            labels.add("Children’s Books");
+            labels.add("Children's Books"); // must be normal apostrophe
             labels.add("Mystery & Suspense");
             labels.add("Religion & Philosophy");
             labels.add("Romance");
@@ -77,7 +77,7 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     }
 
     public Pair<String, String> nextSentence() {
-        String line = fin.nextLine().trim();
+        String line = fin.nextLine().trim().replace("\u2019", "'"); // also replace the unicode right quote with ASCII '
         int indexOfDelimiter = line.indexOf("####");
         if (indexOfDelimiter == -1) {
             System.out.println(line);
@@ -88,12 +88,12 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     }
 
     public int numLabelClasses() {
-        return numClasses;
+        return NUM_CLASSES;
     }
 
     public void reset() {
         try {
-            fin = new Scanner(new File(filePath));
+            fin = new Scanner(new File(filePath), "UTF-8");
         } catch (IOException e) {
             fin = new Scanner(""); // if error, set scanner to read from empty string; hasNext will then return false
         }

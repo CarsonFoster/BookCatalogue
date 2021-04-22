@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.io.*;
 
 import com.robrua.nlp.bert.*;
@@ -45,9 +46,24 @@ public class Test {
             }
         });
 
+        Test testApostropheReplace = new Test("testApostropheReplace", () -> {
+            try {
+                Scanner fin = new Scanner(new File("ai_data\\train.txt"), "UTF-8");
+                while (fin.hasNextLine()) {
+                    String s = fin.nextLine();
+                    System.out.println(s);
+                    System.out.println(s.replace("\u2019", "'"));
+                    System.out.println();
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        });
+
         //tests.add(testDL4J)
         //tests.add(testBert);
         tests.add(runGenreIdentifier);
+        //tests.add(testApostropheReplace);
 
         runTests(tests);
     }

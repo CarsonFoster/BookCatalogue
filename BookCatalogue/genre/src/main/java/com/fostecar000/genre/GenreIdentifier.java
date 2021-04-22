@@ -27,11 +27,19 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.EvaluativeListener;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.optimize.api.InvocationType;
+import org.deeplearning4j.earlystopping.EarlyStoppingConfiguration;
+import org.deeplearning4j.earlystopping.termination.MaxEpochsTerminationCondition;
+import org.deeplearning4j.earlystopping.termination.MaxTimeIterationTerminationCondition;
+import org.deeplearning4j.earlystopping.scorecalc.DataSetLossCalculator;
+import org.deeplearning4j.earlystopping.saver.LocalFileGraphSaver;
+import org.deeplearning4j.earlystopping.trainer.EarlyStoppingGraphTrainer;
+import org.deeplearning4j.earlystopping.EarlyStoppingResult;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.linalg.learning.config.Adam;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.io.File;
 import java.io.IOException;
 
@@ -60,9 +68,8 @@ public class GenreIdentifier {
         int batchSize = 32;
         int vectorSize = 100;
         int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
-        int numClasses = 42; // I'm using 42 different genre identifiers
         int featureMaps = 100;
-        int epochs = 1;
+        int epochs = 2;
 
         Nd4j.getMemoryManager().setAutoGcWindow(10000);
         // Nd4j.getEnvironment().allowHelpers(false); // uncommenting allows you to read one word2vec txt file, otherwise, can only read binary files in a timely manner
@@ -110,7 +117,7 @@ public class GenreIdentifier {
                 .addLayer("outputLayer", new OutputLayer.Builder()
                     .lossFunction(LossFunctions.LossFunction.MCXENT)
                     .activation(Activation.SOFTMAX)
-                    .nOut(numClasses)
+                    .nOut(GenreLabeledSentenceProvider.NUM_CLASSES)
                     .build(), "maxOverTimePooling")
                 .setOutputs("outputLayer")
                 .build();
@@ -121,7 +128,27 @@ public class GenreIdentifier {
         System.out.println("[*] Starting training...");
         // print loss function value every 100 iterations and evaluate model at the end of each epoch
         neuralNet.setListeners(new ScoreIterationListener(100), new EvaluativeListener(validationIter, 1, InvocationType.EPOCH_END));
-        neuralNet.fit(trainIter, epochs);
+        //neuralNet.fit(trainIter, epochs);
+
+        EarlyStoppingConfiguration<ComputationGraph> esConf = new EarlyStoppingConfiguration.Builder<ComputationGraph>()
+            .epochTerminationConditions(new MaxEpochsTerminationCondition(30))
+            .iterationTerminationConditions(new MaxTimeIterationTerminationCondition(30, TimeUnit.MINUTES))
+            .scoreCalculator(new DataSetLossCalculator(validationIter, true))
+            .evaluateEveryNEpochs(1)
+            .modelSaver(new LocalFileGraphSaver("ai_data"))
+            .build();
+
+        EarlyStoppingGraphTrainer trainer = new EarlyStoppingGraphTrainer(esConf, neuralNet, trainIter);
+
+        //Conduct early stopping training:
+        EarlyStoppingResult<ComputationGraph> result = trainer.fit();
+
+        //Print out the results:
+        System.out.println("Termination reason: " + result.getTerminationReason());
+        System.out.println("Termination details: " + result.getTerminationDetails());
+        System.out.println("Total epochs: " + result.getTotalEpochs());
+        System.out.println("Best epoch number: " + result.getBestModelEpoch());
+        System.out.println("Score at best epoch: " + result.getBestModelScore());
 
         System.out.println("[+] Finished.");
 
