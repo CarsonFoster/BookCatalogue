@@ -70,6 +70,7 @@ public class GenreIdentifier {
         int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
         int featureMaps = 100;
         int epochs = 2;
+        final int MINUTES = 120;
 
         Nd4j.getMemoryManager().setAutoGcWindow(10000);
         // Nd4j.getEnvironment().allowHelpers(false); // uncommenting allows you to read one word2vec txt file, otherwise, can only read binary files in a timely manner
@@ -132,7 +133,7 @@ public class GenreIdentifier {
 
         EarlyStoppingConfiguration<ComputationGraph> esConf = new EarlyStoppingConfiguration.Builder<ComputationGraph>()
             .epochTerminationConditions(new MaxEpochsTerminationCondition(30))
-            .iterationTerminationConditions(new MaxTimeIterationTerminationCondition(30, TimeUnit.MINUTES))
+            .iterationTerminationConditions(new MaxTimeIterationTerminationCondition(MINUTES, TimeUnit.MINUTES))
             .scoreCalculator(new DataSetLossCalculator(validationIter, true))
             .evaluateEveryNEpochs(1)
             .modelSaver(new LocalFileGraphSaver("ai_data"))

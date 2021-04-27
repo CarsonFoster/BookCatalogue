@@ -2,21 +2,25 @@ package com.fostecar000.genre;
 
 import org.deeplearning4j.iterator.LabeledSentenceProvider;
 import org.nd4j.common.primitives.Pair;
-import java.util.Scanner;
-import java.util.List;
-import java.util.ArrayList;
-import java.io.File;
-import java.io.IOException;
+import java.util.*;
+import java.io.*;
 
 public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     private static List<String> labels;
     public static final int NUM_CLASSES = 42;
-    private Scanner fin;
+    //private Scanner fin;
+    private BufferedReader fin;
     private String filePath;
+
+    private final void createBufferedReader() throws IOException {
+        if (fin != null) fin.close();
+        fin = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filePath)), "UTF-8"));
+    }
 
     public GenreLabeledSentenceProvider(String filePath) throws IOException {
         this.filePath = filePath;
-        fin = new Scanner(new File(filePath), "UTF-8");
+        //fin = new Scanner(new File(filePath), "UTF-8");
+        createBufferedReader();
     }
 
     private static void createLabels() {
@@ -73,11 +77,22 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     }
 
     public boolean hasNext() {
-        return fin.hasNextLine();
+        //return fin.hasNextLine();
+        try {
+            return fin.ready();
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     public Pair<String, String> nextSentence() {
-        String line = fin.nextLine().trim().replace("\u2019", "'"); // also replace the unicode right quote with ASCII '
+        //String line = fin.nextLine().trim().replace("\u2019", "'"); // also replace the unicode right quote with ASCII '
+        String line;
+        try {
+            line = fin.readLine().replace("\u2019", "'");
+        } catch (IOException e) {
+            return null;
+        }
         int indexOfDelimiter = line.indexOf("####");
         if (indexOfDelimiter == -1) {
             System.out.println(line);
@@ -93,9 +108,17 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
 
     public void reset() {
         try {
-            fin = new Scanner(new File(filePath), "UTF-8");
+            createBufferedReader();
+            //fin.close();
+            //fin = new Scanner(new File(filePath), "UTF-8");
+            System.out.println("reset");
         } catch (IOException e) {
-            fin = new Scanner(""); // if error, set scanner to read from empty string; hasNext will then return false
+            //fin = new Scanner(""); // if error, set scanner to read from empty string; hasNext will then return false
+            try {
+                fin.close();
+            } catch (IOException e2) {
+                // bruh
+            }
         }
     }
 
