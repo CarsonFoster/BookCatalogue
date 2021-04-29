@@ -65,7 +65,7 @@ public class GenreIdentifier {
 
         DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numClasses);*/
         
-        int batchSize = 32;
+        int batchSize = 32; // original: 32; 10, 48, 64 decreased accuracy at 10 min
         int vectorSize = 100;
         int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
         int featureMaps = 100;
@@ -82,6 +82,12 @@ public class GenreIdentifier {
         DataSetIterator validationIter = getDataSetIterator(validatingData, wordVectors, batchSize, truncateBlurbsToLength);
         System.out.println("[+] Done loading data.");
 
+        // other things to try:
+        // - change learning rate
+        // - lower l2 coefficient
+        // - change minibatch size (10, 32, 16-128)
+        // - test other updaters/optimizers
+
         // Full Disclosure: I am only passingly familiar with AI, this turned out to be more complicated than I thought it would be,
         //                  and I didn't have enough time to learn everything, so this is using other people's work
         // this configuration is based on Kim (2014) and the dl4j example below
@@ -89,7 +95,7 @@ public class GenreIdentifier {
         ComputationGraphConfiguration conf = new NeuralNetConfiguration.Builder()
                 .weightInit(WeightInit.RELU)
                 .activation(Activation.LEAKYRELU)
-                .updater(new Adam(0.01))
+                .updater(new Adam(0.0005)) // 0.001 high maybe?, 0.0001 low
                 .convolutionMode(ConvolutionMode.Same)
                 .l2(0.0001)
                 .graphBuilder()

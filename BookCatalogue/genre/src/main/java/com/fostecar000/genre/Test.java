@@ -60,10 +60,22 @@ public class Test {
             }
         });
 
+        Test testGLSP = new Test("testGLSP", () -> {
+            try {
+                GenreLabeledSentenceProvider glsp = new GenreLabeledSentenceProvider("C:\\users\\cwf\\documents\\bookcatalogue\\git\\bookcatalogue\\ai_data\\train.txt");
+                for (int i = 0; i < 30; i++) {
+                    System.out.println(glsp.nextSentence());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
         //tests.add(testDL4J)
         //tests.add(testBert);
         tests.add(runGenreIdentifier);
         //tests.add(testApostropheReplace);
+        //tests.add(testGLSP);
 
         runTests(tests);
     }

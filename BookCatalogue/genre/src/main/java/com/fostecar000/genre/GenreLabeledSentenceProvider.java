@@ -89,7 +89,8 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
         //String line = fin.nextLine().trim().replace("\u2019", "'"); // also replace the unicode right quote with ASCII '
         String line;
         try {
-            line = fin.readLine().replace("\u2019", "'");
+            line = fin.readLine().replace("\u2019", "'")
+                                 .replace("&amp;", "&");
         } catch (IOException e) {
             return null;
         }
