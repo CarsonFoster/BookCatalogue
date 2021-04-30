@@ -69,7 +69,7 @@ public class GenreIdentifier {
         int vectorSize = 100;
         int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
         int featureMaps = 100;
-        int epochs = 2;
+        final int EPOCHS = 1;
         final int MINUTES = 120;
 
         Nd4j.getMemoryManager().setAutoGcWindow(10000);
@@ -82,7 +82,7 @@ public class GenreIdentifier {
         DataSetIterator validationIter = getDataSetIterator(validatingData, wordVectors, batchSize, truncateBlurbsToLength);
         System.out.println("[+] Done loading data.");
 
-        // other things to try:
+        // things to try:
         // - change learning rate
         // - lower l2 coefficient
         // - change minibatch size (10, 32, 16-128)
@@ -97,7 +97,7 @@ public class GenreIdentifier {
                 .activation(Activation.LEAKYRELU)
                 .updater(new Adam(0.0005)) // 0.001 high maybe?, 0.0001 low
                 .convolutionMode(ConvolutionMode.Same)
-                .l2(0.0001)
+                .l2(0.0001) // original: 0.0001; 0.00001 55%; 0.001: 54%, 0.0005: 55%
                 .graphBuilder()
                 .addInputs("inputLayer")
                 .setInputTypes(InputType.convolutional(truncateBlurbsToLength, vectorSize, 1))
@@ -138,7 +138,7 @@ public class GenreIdentifier {
         //neuralNet.fit(trainIter, epochs);
 
         EarlyStoppingConfiguration<ComputationGraph> esConf = new EarlyStoppingConfiguration.Builder<ComputationGraph>()
-            .epochTerminationConditions(new MaxEpochsTerminationCondition(30))
+            .epochTerminationConditions(new MaxEpochsTerminationCondition(EPOCHS))
             .iterationTerminationConditions(new MaxTimeIterationTerminationCondition(MINUTES, TimeUnit.MINUTES))
             .scoreCalculator(new DataSetLossCalculator(validationIter, true))
             .evaluateEveryNEpochs(1)
