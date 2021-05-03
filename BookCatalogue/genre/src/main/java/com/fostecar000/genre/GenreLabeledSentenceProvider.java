@@ -11,15 +11,25 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     //private Scanner fin;
     private BufferedReader fin;
     private String filePath;
+    private String blurb;
+    private boolean usingBlurb;
 
     private final void createBufferedReader() throws IOException {
         if (fin != null) fin.close();
-        fin = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filePath)), "UTF-8"));
+        if (usingBlurb) fin = new BufferedReader(new StringReader(blurb));
+        else fin = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filePath)), "UTF-8"));
     }
 
     public GenreLabeledSentenceProvider(String filePath) throws IOException {
         this.filePath = filePath;
+        usingBlurb = false;
         //fin = new Scanner(new File(filePath), "UTF-8");
+        createBufferedReader();
+    }
+
+    public GenreLabeledSentenceProvider(String blurb, boolean makeThisTrue) throws IOException {
+        this.blurb = blurb;
+        usingBlurb = true;
         createBufferedReader();
     }
 

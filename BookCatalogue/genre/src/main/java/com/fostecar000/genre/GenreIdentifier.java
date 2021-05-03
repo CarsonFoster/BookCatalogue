@@ -45,6 +45,34 @@ import java.io.IOException;
 
 public class GenreIdentifier {
     private static final String vectorPath = "C:\\Users\\cwf\\Documents\\BookCatalogue\\glove.6b\\glove.6b.100d.bin";
+    private static Word2Vec wordVectors;
+    private static int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
+    private static int batchSize = 32; // original: 32; 10, 48, 64 decreased accuracy at 10 min
+
+    private static void loadWordVectors() {
+        if (wordVectors == null)
+            wordVectors = WordVectorSerializer.readWord2VecModel(new File(vectorPath));
+    }
+
+    public static String predictGenre(String blurb) {
+        loadWordVectors();
+        ComputationGraph neuralNet = ComputationGraph.load(new File("ai_data\\bestGraph120min.bin"), true);
+        CnnSentenceDataSetIterator iterator = getDataSetIteratorFromBlurb(blurb, wordVectors, batchSize, truncateBlurbsToLength);
+        INDArray results = neuralNet.outputSingle(iterator);
+        int numClasses = iterator.totalOutcomes();
+        double maxProbability = 0;
+        int maxLabelIndex = 0;
+
+        for (int i = 0; i < numClasses; i++) {
+            double probability = results.getDouble(i);
+            if (probability > maxProbability) {
+                maxProbability = probability;
+                maxLabelIndex = i;
+            }
+        }
+
+        return iterator.getLabels().get(maxLabelIndex);
+    }
 
     public static void main(String[] args) throws IOException, InterruptedException {
         
@@ -65,9 +93,7 @@ public class GenreIdentifier {
 
         DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numClasses);*/
         
-        int batchSize = 32; // original: 32; 10, 48, 64 decreased accuracy at 10 min
         int vectorSize = 100;
-        int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
         int featureMaps = 100;
         final int EPOCHS = 1;
         final int MINUTES = 120;
@@ -76,7 +102,7 @@ public class GenreIdentifier {
         // Nd4j.getEnvironment().allowHelpers(false); // uncommenting allows you to read one word2vec txt file, otherwise, can only read binary files in a timely manner
 
         System.out.println("[*] Loading data...");
-        Word2Vec wordVectors = WordVectorSerializer.readWord2VecModel(new File(vectorPath));
+        loadWordVectors();
 
         DataSetIterator trainIter = getDataSetIterator(trainingData, wordVectors, batchSize, truncateBlurbsToLength);
         DataSetIterator validationIter = getDataSetIterator(validatingData, wordVectors, batchSize, truncateBlurbsToLength);
@@ -161,12 +187,20 @@ public class GenreIdentifier {
 
     }
 
-    private static DataSetIterator getDataSetIterator(String filePath, WordVectors wordVectors, int minibatchSize, int maxSentenceLength) throws IOException {
+    private static DataSetIterator getDataSetIterator(String filePath, WordVectors vectors, int minibatchSize, int maxSentenceLength) throws IOException {
         GenreLabeledSentenceProvider glsp = new GenreLabeledSentenceProvider(filePath);
+        return fromGLSP(glsp, vectors, minibatchSize, maxSentenceLength);
+    }
 
+    private static DataSetIterator getDataSetIteratorFromBlurb(String blurb, WordVectors vectors, int minibatchSize, int maxSentenceLength) throws IOException {
+        GenreLabeledSentenceProvider glsp = new GenreLabeledSentenceProvider(blurb, true);
+        return fromGLSP(glsp, vectors, minibatchSize, maxSentenceLength);
+    }
+
+    private static DataSetIterator fromGLSP(GenreLabeledSentenceProvider glsp, WordVectors vectors, int minibatchSize, int maxSentenceLength) {
         return new CnnSentenceDataSetIterator.Builder(Format.CNN2D)
                                              .sentenceProvider(glsp)
-                                             .wordVectors(wordVectors)
+                                             .wordVectors(vectors)
                                              .minibatchSize(minibatchSize)
                                              .maxSentenceLength(maxSentenceLength)
                                              .useNormalizedWordVectors(false)
