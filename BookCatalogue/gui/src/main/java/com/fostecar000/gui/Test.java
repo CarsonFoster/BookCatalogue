@@ -48,10 +48,13 @@ public class Test {
 
         Test main = new Test("main", () -> Main.main(null));
 
+        Test testGenreGui = new Test("testGenreGui", () -> PredictGenre.main(null));
+
         //tests.add(insertionTest);
         //tests.add(basicSearchCall);
         //tests.add(searchTest);
-        tests.add(main);
+        //tests.add(main);
+        tests.add(testGenreGui);
         
         runTests(tests);
     }

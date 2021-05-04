@@ -37,6 +37,7 @@ import org.deeplearning4j.earlystopping.EarlyStoppingResult;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -54,10 +55,10 @@ public class GenreIdentifier {
             wordVectors = WordVectorSerializer.readWord2VecModel(new File(vectorPath));
     }
 
-    public static String predictGenre(String blurb) {
+    public static String predictGenre(String blurb) throws IOException {
         loadWordVectors();
         ComputationGraph neuralNet = ComputationGraph.load(new File("ai_data\\bestGraph120min.bin"), true);
-        CnnSentenceDataSetIterator iterator = getDataSetIteratorFromBlurb(blurb, wordVectors, batchSize, truncateBlurbsToLength);
+        CnnSentenceDataSetIterator iterator = (CnnSentenceDataSetIterator) getDataSetIteratorFromBlurb(blurb, wordVectors, batchSize, truncateBlurbsToLength);
         INDArray results = neuralNet.outputSingle(iterator);
         int numClasses = iterator.totalOutcomes();
         double maxProbability = 0;
