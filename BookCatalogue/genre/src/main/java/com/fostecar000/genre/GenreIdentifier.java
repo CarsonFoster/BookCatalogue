@@ -47,17 +47,23 @@ import java.io.IOException;
 public class GenreIdentifier {
     private static final String vectorPath = "C:\\Users\\cwf\\Documents\\BookCatalogue\\glove.6b\\glove.6b.100d.bin";
     private static Word2Vec wordVectors;
+    private static ComputationGraph neuralNet;
     private static int truncateBlurbsToLength = 256; // truncate blurbs to have at most 256 words
     private static int batchSize = 32; // original: 32; 10, 48, 64 decreased accuracy at 10 min
 
-    private static void loadWordVectors() {
+    private static void loadWordVectors(String wordVectorLocation) {
         if (wordVectors == null)
-            wordVectors = WordVectorSerializer.readWord2VecModel(new File(vectorPath));
+            wordVectors = WordVectorSerializer.readWord2VecModel(new File(wordVectorLocation));
     }
 
-    public static String predictGenre(String blurb) throws IOException {
-        loadWordVectors();
-        ComputationGraph neuralNet = ComputationGraph.load(new File("ai_data\\bestGraph120min.bin"), true);
+    private static void loadNeuralNet(String modelLocation) throws IOException {
+        if (neuralNet == null)
+            neuralNet = ComputationGraph.load(new File(modelLocation), true);
+    }
+
+    public static String predictGenre(String wordVectorLocation, String modelLocation, String blurb) throws IOException {
+        loadWordVectors(wordVectorLocation);
+        loadNeuralNet(modelLocation);
         CnnSentenceDataSetIterator iterator = (CnnSentenceDataSetIterator) getDataSetIteratorFromBlurb(blurb, wordVectors, batchSize, truncateBlurbsToLength);
         INDArray results = neuralNet.outputSingle(iterator);
         int numClasses = iterator.totalOutcomes();
@@ -103,7 +109,7 @@ public class GenreIdentifier {
         // Nd4j.getEnvironment().allowHelpers(false); // uncommenting allows you to read one word2vec txt file, otherwise, can only read binary files in a timely manner
 
         System.out.println("[*] Loading data...");
-        loadWordVectors();
+        loadWordVectors(vectorPath);
 
         DataSetIterator trainIter = getDataSetIterator(trainingData, wordVectors, batchSize, truncateBlurbsToLength);
         DataSetIterator validationIter = getDataSetIterator(validatingData, wordVectors, batchSize, truncateBlurbsToLength);

@@ -17,6 +17,8 @@ import javafx.scene.control.Button;
 import java.awt.Toolkit;
 import java.awt.Dimension;
 
+import com.fostecar000.genre.GenreIdentifier;
+
 public class PredictGenre extends Application {
 
     private static int WIDTH;
@@ -62,6 +64,12 @@ public class PredictGenre extends Application {
 
         cancel.setOnAction(e -> {
             stage.close();
+        });
+
+        predict.setOnAction(e -> {
+            String blurbText = blurb.getText();
+            System.out.println(blurbText);
+            System.out.println(GenreIdentifier.predictGenre("C:\\Users\\cwf\\Documents\\BookCatalogue\\glove.6b\\glove.6b.100d.bin", "ai_data\\bestGraph120min.bin", blurbText));
         });
         
         return pane;

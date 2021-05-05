@@ -10,8 +10,6 @@ import java.util.Arrays;
 import java.util.Scanner;
 import java.io.*;
 
-import com.robrua.nlp.bert.*;
-
 public class Test {
     private String label;
     private Runnable code;
@@ -28,13 +26,6 @@ public class Test {
                 TestDL4J.main(null);
             } catch (Exception e) {
                 e.printStackTrace();
-            }
-        });
-
-        Test testBert = new Test("testBert", () -> {
-            try (Bert bert = Bert.load("com/robrua/nlp/easy-bert/bert-cased-L-12-H-768-A-12")) {
-                float[] embedding = bert.embedSequence("A sequence");
-                System.out.println(Arrays.toString(embedding));
             }
         });
 
