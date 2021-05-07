@@ -11,26 +11,23 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     //private Scanner fin;
     private BufferedReader fin;
     private String filePath;
-    private String blurb;
-    private boolean usingBlurb;
+    private boolean hasNoInput;
 
     private final void createBufferedReader() throws IOException {
         if (fin != null) fin.close();
-        if (usingBlurb) fin = new BufferedReader(new StringReader(blurb));
+        if (hasNoInput) fin = null;
         else fin = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filePath)), "UTF-8"));
     }
 
     public GenreLabeledSentenceProvider(String filePath) throws IOException {
         this.filePath = filePath;
-        usingBlurb = false;
+        hasNoInput = false;
         //fin = new Scanner(new File(filePath), "UTF-8");
         createBufferedReader();
     }
 
-    public GenreLabeledSentenceProvider(String blurb, boolean makeThisTrue) throws IOException {
-        this.blurb = blurb;
-        usingBlurb = true;
-        createBufferedReader();
+    public GenreLabeledSentenceProvider() {
+        hasNoInput = true;
     }
 
     private static void createLabels() {
@@ -88,6 +85,7 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
 
     public boolean hasNext() {
         //return fin.hasNextLine();
+        if (hasNoInput) return false;
         try {
             return fin.ready();
         } catch (IOException e) {
@@ -97,6 +95,7 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
 
     public Pair<String, String> nextSentence() {
         //String line = fin.nextLine().trim().replace("\u2019", "'"); // also replace the unicode right quote with ASCII '
+        if (hasNoInput) return null;
         String line;
         try {
             line = fin.readLine().replace("\u2019", "'")
@@ -118,6 +117,7 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     }
 
     public void reset() {
+        if (hasNoInput) return;
         try {
             createBufferedReader();
             //fin.close();
@@ -134,6 +134,7 @@ public class GenreLabeledSentenceProvider implements LabeledSentenceProvider {
     }
 
     public int totalNumSentences() {
+        if (hasNoInput) return 0;
         return -1; // we don't know how many there are
     }
 }

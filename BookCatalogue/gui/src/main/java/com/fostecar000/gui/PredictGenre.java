@@ -16,6 +16,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.Button;
 import java.awt.Toolkit;
 import java.awt.Dimension;
+import java.io.IOException;
 
 import com.fostecar000.genre.GenreIdentifier;
 
@@ -45,6 +46,7 @@ public class PredictGenre extends Application {
 
         blurb = new TextArea();
         blurb.setPrefRowCount(5);
+        blurb.setWrapText(true);
         blurb.maxWidthProperty().bind(center.prefWidthProperty());
 
         HBox buttons = new HBox();
@@ -55,9 +57,8 @@ public class PredictGenre extends Application {
         prediction = new TextField();
         prediction.setEditable(false);
         prediction.setPrefColumnCount(15);
-        Button use = new Button("Use");
         Button cancel = new Button("Cancel");
-        buttons.getChildren().addAll(predict, prediction, use, cancel);
+        buttons.getChildren().addAll(predict, prediction, cancel);
 
         center.getChildren().addAll(blurb, buttons);
         pane.setCenter(center);
@@ -69,7 +70,12 @@ public class PredictGenre extends Application {
         predict.setOnAction(e -> {
             String blurbText = blurb.getText();
             System.out.println(blurbText);
-            System.out.println(GenreIdentifier.predictGenre("C:\\Users\\cwf\\Documents\\BookCatalogue\\glove.6b\\glove.6b.100d.bin", "ai_data\\bestGraph120min.bin", blurbText));
+            try {
+                String predictedGenre = GenreIdentifier.predictGenre("C:\\Users\\cwf\\Documents\\BookCatalogue\\glove.6b\\glove.6b.100d.bin", "ai_data\\bestGraph120min.bin", blurbText);
+                prediction.setText(predictedGenre);
+            } catch (IOException err) {
+                Alert.error("Could not predict genre", err);
+            }
         });
         
         return pane;

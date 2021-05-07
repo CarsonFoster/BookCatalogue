@@ -36,6 +36,18 @@
       <artifactId>backend</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>com.fostecar000</groupId>
+      <artifactId>genre</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.datavec</groupId>
+          <artifactId>datavec-data-image</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 
   <build>

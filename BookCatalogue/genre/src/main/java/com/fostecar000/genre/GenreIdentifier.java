@@ -9,7 +9,7 @@ import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.deeplearning4j.iterator.CnnSentenceDataSetIterator;
 import org.deeplearning4j.iterator.CnnSentenceDataSetIterator.Format;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
-import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
+//import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.nd4j.linalg.factory.Nd4j;
 
@@ -64,8 +64,9 @@ public class GenreIdentifier {
     public static String predictGenre(String wordVectorLocation, String modelLocation, String blurb) throws IOException {
         loadWordVectors(wordVectorLocation);
         loadNeuralNet(modelLocation);
-        CnnSentenceDataSetIterator iterator = (CnnSentenceDataSetIterator) getDataSetIteratorFromBlurb(blurb, wordVectors, batchSize, truncateBlurbsToLength);
-        INDArray results = neuralNet.outputSingle(iterator);
+        CnnSentenceDataSetIterator iterator = fromGLSP(new GenreLabeledSentenceProvider(), wordVectors, batchSize, truncateBlurbsToLength);
+        INDArray featuresBlurb = iterator.loadSingleSentence(blurb);
+        INDArray results = neuralNet.outputSingle(featuresBlurb);
         int numClasses = iterator.totalOutcomes();
         double maxProbability = 0;
         int maxLabelIndex = 0;
@@ -194,17 +195,12 @@ public class GenreIdentifier {
 
     }
 
-    private static DataSetIterator getDataSetIterator(String filePath, WordVectors vectors, int minibatchSize, int maxSentenceLength) throws IOException {
+    private static DataSetIterator getDataSetIterator(String filePath, Word2Vec vectors, int minibatchSize, int maxSentenceLength) throws IOException {
         GenreLabeledSentenceProvider glsp = new GenreLabeledSentenceProvider(filePath);
         return fromGLSP(glsp, vectors, minibatchSize, maxSentenceLength);
     }
 
-    private static DataSetIterator getDataSetIteratorFromBlurb(String blurb, WordVectors vectors, int minibatchSize, int maxSentenceLength) throws IOException {
-        GenreLabeledSentenceProvider glsp = new GenreLabeledSentenceProvider(blurb, true);
-        return fromGLSP(glsp, vectors, minibatchSize, maxSentenceLength);
-    }
-
-    private static DataSetIterator fromGLSP(GenreLabeledSentenceProvider glsp, WordVectors vectors, int minibatchSize, int maxSentenceLength) {
+    private static CnnSentenceDataSetIterator fromGLSP(GenreLabeledSentenceProvider glsp, Word2Vec vectors, int minibatchSize, int maxSentenceLength) {
         return new CnnSentenceDataSetIterator.Builder(Format.CNN2D)
                                              .sentenceProvider(glsp)
                                              .wordVectors(vectors)
