@@ -71,7 +71,8 @@ public class PredictGenre extends Application {
             String blurbText = blurb.getText();
             System.out.println(blurbText);
             try {
-                String predictedGenre = GenreIdentifier.predictGenre("C:\\Users\\cwf\\Documents\\BookCatalogue\\glove.6b\\glove.6b.100d.bin", "ai_data\\bestGraph120min.bin", blurbText);
+                String predictedGenre = GenreIdentifier.predictGenre("glove.6b.100d.bin", "neuralNet.bin", blurbText); // change for packaging: will be in base directory
+                //String predictedGenre = GenreIdentifier.predictGenre("C:\\Users\\cwf\\Documents\\BookCatalogue\\glove.6b\\glove.6b.100d.bin", "ai_data\\bestGraph120min.bin", blurbText);
                 prediction.setText(predictedGenre);
             } catch (IOException err) {
                 Alert.error("Could not predict genre", err);

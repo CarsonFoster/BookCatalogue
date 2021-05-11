@@ -4,6 +4,7 @@ import java.util.Properties;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
@@ -38,7 +39,8 @@ public class Database implements AutoCloseable {
     public Database() throws IOException, FileNotFoundException, NullPointerException, URISyntaxException {
         userHandling = false;
         p = new Properties();
-        p.load(getClass().getClassLoader().getResourceAsStream("database.properties"));
+        p.load(new FileInputStream("database.properties")); // change for packaging: will be in base directory
+        //p.load(getClass().getClassLoader().getResourceAsStream("database.properties"));
         String executable = p.getProperty("executableLocation");
         String args = p.getProperty("arguments");
         String replaced = replaceArgs(args);
@@ -68,7 +70,8 @@ public class Database implements AutoCloseable {
     }
 
     private String getAbsolutePath(String resource) throws IOException, NullPointerException, URISyntaxException {
-        return new File(getClass().getClassLoader().getResource(resource).toURI()).getAbsolutePath();
+        return resource; // change for packaging: will be in base directory
+        //return new File(getClass().getClassLoader().getResource(resource).toURI()).getAbsolutePath();
     }
 
     private String replaceArgs(String args) throws IOException, NullPointerException, URISyntaxException {
