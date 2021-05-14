@@ -19,6 +19,7 @@ public class Main extends Application {
     private static int WIDTH;
     private static int HEIGHT;
     private static final Database db = getDatabaseHandle();
+    private static Exception dbException;
 
     private VBox createPane() {
         VBox box = new VBox();
@@ -67,6 +68,12 @@ public class Main extends Application {
         Scene scene = new Scene(createPane(), WIDTH, HEIGHT);
         stage.setScene(scene);
         stage.show();
+
+        if (dbException != null) {
+            Alert.error("Failed to start database; see database.properties for more information", dbException);
+            stage.close();
+            System.exit(1);
+        }
     }
 
     public Main() {
@@ -79,13 +86,13 @@ public class Main extends Application {
         try {
             return new Database();
         } catch (Exception e) {
-            Alert.error("Failed to connect to database; check database.properties", e);
+            dbException = e;
             return null;
         }
     }
 
     public static void main(String[] args) {
-        if (db == null) return;
+        //if (db == null) return;
         try (db) {
             launch(args);
         } catch (Exception e) {

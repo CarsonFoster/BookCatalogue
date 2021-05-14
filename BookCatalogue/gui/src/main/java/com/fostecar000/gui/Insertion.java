@@ -115,10 +115,21 @@ public class Insertion extends Application {
     BorderPane createPane() {
         BorderPane pane = new BorderPane();
 
+        Button predictGenreBtn = new Button("Predict Genre");
+        predictGenreBtn.setOnAction(e -> {
+            PredictGenre.call();
+        });
+
+        GridPane fields = createFieldInputs();
+        VBox leftSide = new VBox();
+        leftSide.setAlignment(Pos.CENTER);
+        leftSide.setSpacing(20);
+        leftSide.getChildren().addAll(fields, predictGenreBtn);
+
         HBox center = new HBox();
         center.setAlignment(Pos.CENTER);
         center.setSpacing(20);
-        center.getChildren().addAll(createFieldInputs(), createTagInput());
+        center.getChildren().addAll(leftSide, createTagInput());
 
         Button insert = new Button("Insert Book");
         insert.setPrefHeight(50);
